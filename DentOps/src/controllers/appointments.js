@@ -61,7 +61,7 @@ exports.createAppointment = async (req, res) => {
 --------------------------*/
 exports.listRequests = async (req, res) => {
   try {
-    if (req.user.role !== 'CLINIC_MANAGER') {
+    if (req.user.role !== 'DENTAL_STAFF') {
       return res.status(403).json({ success:false, message: 'Only clinic manager' });
     }
 
@@ -86,7 +86,7 @@ exports.listRequests = async (req, res) => {
 --------------------------*/
 exports.confirmAppointment = async (req, res) => {
   try {
-    if (req.user.role !== 'CLINIC_MANAGER') {
+    if (req.user.specialization !== 'CLINIC_MANAGER') {
       return res.status(403).json({ success:false, message: 'Only clinic manager' });
     }
 
@@ -267,7 +267,7 @@ exports.getAppointment = async (req, res) => {
 
     const role = req.user.role;
     const uid = req.user.id;
-    if (role === 'CLINIC_MANAGER' ||
+    if (req.user.specialization === 'CLINIC_MANAGER' ||
         (role === 'PATIENT' && String(appt.patientId._id) === String(uid)) ||
         (role === 'DENTAL_STAFF' && appt.dentalStaffId && String(appt.dentalStaffId._id) === String(uid))) {
       return res.status(200).json({ success:true, data: appt });
@@ -285,7 +285,7 @@ exports.getAppointment = async (req, res) => {
 --------------------------*/
 exports.deleteAppointment = async (req, res) => {
   try {
-    if (req.user.role !== 'CLINIC_MANAGER') return res.status(403).json({ success:false, message: 'Only clinic manager' });
+    if (req.user.specialization !== 'CLINIC_MANAGER') return res.status(403).json({ success:false, message: 'Only clinic manager' });
 
     const { id } = req.params;
     if (!mongoose.Types.ObjectId.isValid(id)) return res.status(400).json({ success:false, message: 'Invalid id' });
@@ -308,7 +308,7 @@ exports.deleteAppointment = async (req, res) => {
 --------------------------*/
 exports.updateAppointment = async (req, res) => {
   try {
-    if (req.user.role !== 'CLINIC_MANAGER') return res.status(403).json({ success:false, message: 'Only clinic manager' });
+    if (req.user.specialization !== 'CLINIC_MANAGER') return res.status(403).json({ success:false, message: 'Only clinic manager' });
 
     const { id } = req.params;
     if (!mongoose.Types.ObjectId.isValid(id)) return res.status(400).json({ success:false, message: 'Invalid id' });
@@ -321,6 +321,56 @@ exports.updateAppointment = async (req, res) => {
     return res.status(200).json({ success:true, data: appt });
   } catch (err) {
     console.error(err);
+    return res.status(500).json({ success:false, message: 'Server Error' });
+  }
+};
+
+
+// controllers/appointments.js (add this function)
+exports.getAppointments = async (req, res) => {
+  try {
+    const user = req.user;
+    const { patientId, dentalStaffId, status } = req.query;
+
+    const query = {};
+
+    // If caller is a patient, restrict to their own records only
+    if (user.role === 'PATIENT') {
+      query.patientId = user.id;
+    } else {
+      // For staff/manager, allow queries via query params
+      if (patientId) {
+        if (!mongoose.Types.ObjectId.isValid(patientId)) {
+          return res.status(400).json({ success:false, message: 'Invalid patientId' });
+        }
+        query.patientId = patientId;
+      }
+      if (dentalStaffId) {
+        if (!mongoose.Types.ObjectId.isValid(dentalStaffId)) {
+          return res.status(400).json({ success:false, message: 'Invalid dentalStaffId' });
+        }
+        query.dentalStaffId = dentalStaffId;
+      }
+    }
+
+    if (status) {
+      // ensure allowed statuses only
+      const allowed = ['PENDING', 'CONFIRMED', 'CANCELLED'];
+      if (!allowed.includes(status)) {
+        return res.status(400).json({ success:false, message: 'Invalid status filter' });
+      }
+      query.status = status;
+    }
+
+    const appts = await Appointment.find(query)
+      .populate('patientId', 'fullName email')
+      .populate('dentalStaffId', 'fullName email specialization')
+      .populate('appointmentTypeId', 'name durationMinutes')
+      .sort({ createdAt: -1 });
+
+    return res.status(200).json({ success:true, count: appts.length, data: appts });
+  } catch (err) {
+    console.error('getAppointments error', err);
     return res.status(500).json({ success:false, message: 'Server Error' });
   }
 };

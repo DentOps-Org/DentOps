@@ -16,10 +16,12 @@ import AppointmentTypeForm from "../pages/AppointmentTypes/AppointmentTypeForm";
 import AppointmentTypeList from "../pages/AppointmentTypes/AppointmentTypeList";
 import InventoryList from "../pages/Inventory/InventoryList";
 import InventoryForm from "../pages/Inventory/InventoryForm";
-import AvailabilityManagerPage from '../pages/Availability/AvailabilityManagerPage';
-import AvailabilityForm from '../pages/Availability/AvailabilityForm';
-import DentistAvailabilityPage from '../pages/Availability/DentistAvailabilityPage';
-
+import AvailabilityManagerPage from "../pages/Availability/AvailabilityManagerPage";
+import AvailabilityForm from "../pages/Availability/AvailabilityForm";
+import DentistAvailabilityPage from "../pages/Availability/DentistAvailabilityPage";
+import BookAppointment from "../pages/Appointments/BookAppointment";
+import PatientAppointments from "../pages/Appointments/PatientAppointments";
+import ManagerRequests from "../pages/Appointments/ManagerRequests";
 
 export default function AppRouter() {
   return (
@@ -163,6 +165,30 @@ export default function AppRouter() {
           element={
             <ProtectedRoute allowedRoles={["DENTAL_STAFF"]}>
               <DentistAvailabilityPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/appointments/requests"
+          element={
+            <ProtectedRoute allowedRoles={["DENTAL_STAFF"]}>
+              <ManagerRequests />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/appointments/new"
+          element={
+            <ProtectedRoute allowedRoles={["PATIENT"]}>
+              <BookAppointment />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/appointments/my"
+          element={
+            <ProtectedRoute allowedRoles={["PATIENT"]}>
+              <PatientAppointments />
             </ProtectedRoute>
           }
         />

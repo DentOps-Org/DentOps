@@ -27,6 +27,26 @@ export default function PatientDashboard() {
             Request Appointment
           </Link>
         </div>
+
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-5">
+          <div className="p-4 border rounded-lg">
+            <h2 className="font-semibold">Request Appointment</h2>
+            <p className="text-sm text-gray-500">Choose service and date to request an appointment.</p>
+            <div className="mt-4">
+              <Link to="/appointments/new" className="bg-blue-600 text-white px-3 py-2 rounded">Request</Link>
+            </div>
+          </div>
+
+          <div className="p-4 border rounded-lg">
+            <h2 className="font-semibold">My Appointments</h2>
+            <p className="text-sm text-gray-500">View your requests and confirmed appointments.</p>
+            <div className="mt-4">
+              <Link to="/appointments/my" className="bg-blue-600 text-white px-3 py-2 rounded">Open</Link>
+            </div>
+          </div>
+        </div>
+
       </div>
     </div>
   );

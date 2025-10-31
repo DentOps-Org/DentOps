@@ -2,13 +2,14 @@ const express = require('express');
 const { check } = require('express-validator');
 const {
   createAppointment,
-  listRequests,
+  listRequests, 
   confirmAppointment,
   getAvailableSlots,
   cancelAppointment,
   getAppointment,
   updateAppointment,
-  deleteAppointment
+  deleteAppointment,
+  getAppointments
 } = require('../controllers/appointments');
 const { protect, authorize } = require('../middleware/auth');
 
@@ -28,10 +29,10 @@ router.post(
 );
 
 // Manager lists requests (PENDING by default)
-router.get('/requests', protect, authorize('CLINIC_MANAGER'), listRequests);
+router.get('/requests', protect, authorize('DENTAL_STAFF'), listRequests);
 
 // Manager confirms/assigns a pending request
-router.post('/:id/confirm', protect, authorize('CLINIC_MANAGER'), confirmAppointment);
+router.post('/:id/confirm', protect, authorize('DENTAL_STAFF'), confirmAppointment);
 
 // Thin wrapper to get available slots for a dentist
 router.get('/available', protect, getAvailableSlots);
@@ -41,9 +42,11 @@ router.patch('/:id/cancel', protect, cancelAppointment);
 
 // Read/update/delete endpoints
 router.get('/:id', protect, getAppointment);
-router.put('/:id', protect, authorize('CLINIC_MANAGER'), updateAppointment);
-router.delete('/:id', protect, authorize('CLINIC_MANAGER'), deleteAppointment);
+router.put('/:id', protect, authorize('DENTAL_STAFF'), updateAppointment);
+router.delete('/:id', protect, authorize('DENTAL_STAFF'), deleteAppointment);
 
-// (Optional) provider calendar / listing route could be added separately
+// at top of file (after protect middleware)
+router.get('/', protect, getAppointments); // <-- new list endpoint (must appear BEFORE router.get('/:id'))
+
 
 module.exports = router;
