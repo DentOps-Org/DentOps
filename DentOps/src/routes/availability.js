@@ -24,7 +24,7 @@ router.get('/:dentalStaffId/free-windows', getFreeWindows);
 router.post(
   '/',
   protect,
-  authorize('CLINIC_MANAGER'),
+  authorize('DENTAL_STAFF'),
   [
     check('dentalStaffId', 'Dental staff ID is required').notEmpty(),
     check('weekday', 'Weekday is required (0-6)').isInt({ min: 0, max: 6 }),
@@ -38,7 +38,7 @@ router.post(
 router.route('/:id')
   .put(
     protect,
-    authorize('CLINIC_MANAGER'),
+    authorize('DENTAL_STAFF'),
     [
       check('dentalStaffId', 'Dental staff ID is required').notEmpty(),
       check('weekday', 'Weekday is required (0-6)').isInt({ min: 0, max: 6 }),
@@ -47,6 +47,6 @@ router.route('/:id')
     ],
     updateAvailability
   )
-  .delete(protect, authorize('CLINIC_MANAGER'), deleteAvailability);
+  .delete(protect, authorize('DENTAL_STAFF'), deleteAvailability);
 
 module.exports = router;

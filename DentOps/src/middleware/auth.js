@@ -43,12 +43,38 @@ exports.protect = async (req, res, next) => {
 };
 
 // Grant access to specific roles
-exports.authorize = (...roles) => {
+// exports.authorize = (...roles) => {
+//   return (req, res, next) => {
+//     if (!roles.includes(req.user.role)) {
+//       return res.status(403).json({
+//         success: false,
+//         message: `User role ${req.user.role} is not authorized to access this route`
+//       });
+//     }
+//     next();
+//   };
+// };
+
+// middleware/authorize.js  (or update existing middleware/auth.js)
+exports.authorize = (...allowed) => {
   return (req, res, next) => {
-    if (!roles.includes(req.user.role)) {
+    if (!req.user) {
+      return res.status(401).json({ success: false, message: 'Not authenticated' });
+    }
+
+    const userRole = req.user.role;             // e.g. "DENTAL_STAFF"
+    const userSpec = req.user.specialization;   // e.g. "CLINIC_MANAGER" or "DENTIST"
+
+    // allowed contains entries like "DENTAL_STAFF" or "CLINIC_MANAGER"
+    const ok = allowed.some(a => {
+      if (!a) return false;
+      return a === userRole || a === userSpec;
+    });
+
+    if (!ok) {
       return res.status(403).json({
         success: false,
-        message: `User role ${req.user.role} is not authorized to access this route`
+        message: `User role ${userRole} is not authorized to access this route`
       });
     }
     next();

@@ -21,10 +21,10 @@ export default function DentistDashboard() {
             View Appointment Types
           </Link>
           <Link
-            to="/appointments"
+            to="/availability/me"
             className="bg-gray-100 px-4 py-2 rounded hover:bg-gray-200"
           >
-            My Appointments
+            My Timings
           </Link>
         </div>
       </div>

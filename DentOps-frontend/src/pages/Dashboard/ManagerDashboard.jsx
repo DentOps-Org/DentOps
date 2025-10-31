@@ -97,6 +97,15 @@ export default function ManagerDashboard() {
             </Link>
           </div>
         </div>
+
+        {/* Availability card (NEW) */}
+        <div className="p-4 border rounded-lg">
+          <h2 className="font-semibold mb-1">Dentist Availability</h2>
+          <p className="text-sm text-gray-500">
+            Create / edit dentist weekly working hours. Dentists can view their slots.
+          </p>
+          <Link to="/availability" className="inline-block mt-4 bg-blue-600 text-white px-3 py-2 rounded">Manage Availability</Link>
+        </div>
         </div>
       </div>
     </div>

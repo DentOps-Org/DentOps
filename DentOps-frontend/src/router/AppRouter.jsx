@@ -16,6 +16,10 @@ import AppointmentTypeForm from "../pages/AppointmentTypes/AppointmentTypeForm";
 import AppointmentTypeList from "../pages/AppointmentTypes/AppointmentTypeList";
 import InventoryList from "../pages/Inventory/InventoryList";
 import InventoryForm from "../pages/Inventory/InventoryForm";
+import AvailabilityManagerPage from '../pages/Availability/AvailabilityManagerPage';
+import AvailabilityForm from '../pages/Availability/AvailabilityForm';
+import DentistAvailabilityPage from '../pages/Availability/DentistAvailabilityPage';
+
 
 export default function AppRouter() {
   return (
@@ -116,7 +120,7 @@ export default function AppRouter() {
         <Route
           path="/inventory/new"
           element={
-            <ProtectedRoute  allowedRoles={['DENTAL_STAFF']}>
+            <ProtectedRoute allowedRoles={["DENTAL_STAFF"]}>
               <InventoryForm />
             </ProtectedRoute>
           }
@@ -125,8 +129,40 @@ export default function AppRouter() {
         <Route
           path="/inventory/:id/edit"
           element={
-            <ProtectedRoute  allowedRoles={['DENTAL_STAFF']}>
+            <ProtectedRoute allowedRoles={["DENTAL_STAFF"]}>
               <InventoryForm />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/availability"
+          element={
+            <ProtectedRoute allowedRoles={["DENTAL_STAFF"]}>
+              <AvailabilityManagerPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/availability/new"
+          element={
+            <ProtectedRoute allowedRoles={["DENTAL_STAFF"]}>
+              <AvailabilityForm />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/availability/:id/edit"
+          element={
+            <ProtectedRoute allowedRoles={["DENTAL_STAFF"]}>
+              <AvailabilityForm />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/availability/me"
+          element={
+            <ProtectedRoute allowedRoles={["DENTAL_STAFF"]}>
+              <DentistAvailabilityPage />
             </ProtectedRoute>
           }
         />
