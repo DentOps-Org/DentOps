@@ -1,18 +1,12 @@
-import { configureStore } from '@reduxjs/toolkit';
-import authReducer from './slices/authSlice';
-import appointmentReducer from './slices/appointmentSlice';
-import inventoryReducer from './slices/inventorySlice';
-import recordReducer from './slices/recordSlice';
-import userReducer from './slices/userSlice';
+import { configureStore } from "@reduxjs/toolkit";
+import authReducer from "./slices/authSlice";
+import appointmentTypeReducer from "./slices/appointmentTypeSlice";
+import inventoryReducer from "./slices/inventorySlice";
 
 export const store = configureStore({
   reducer: {
     auth: authReducer,
-    appointments: appointmentReducer,
+    appointmentTypes: appointmentTypeReducer,
     inventory: inventoryReducer,
-    records: recordReducer,
-    users: userReducer,
   },
 });
-
-export default store;

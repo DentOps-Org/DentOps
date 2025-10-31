@@ -26,57 +26,53 @@ const UserSchema = new mongoose.Schema({
   },
   specialization: {
     type: String,
-    enum: ['DENTIST', 'MANAGER'],
-    default: 'DENTIST'
+    enum: ['DENTIST', 'CLINIC_MANAGER', null],
+    default: null
   },
   phone: {
     type: String,
-    maxlength: [20, 'Phone number cannot be longer than 20 characters']
+    maxlength: [11, 'Phone number cannot be longer than 11 characters']
   },
-  dob: {
-    type: Date
-  },
+  dob: { type: Date },
   password: {
     type: String,
     required: [true, 'Please add a password'],
     minlength: 6,
     select: false
   },
-  isVerified: {
-    type: Boolean,
-    default: true // Auto-verify for MVP
-  },
-  // Password reset fields
-  resetPasswordToken: String,
-  resetPasswordExpire: Date,
-  // System fields
-  lastLogin: {
-    type: Date
-  },
-  createdAt: {
-    type: Date,
-    default: Date.now
-  }
+  createdAt: { type: Date, default: Date.now }
 });
 
-// Encrypt password using bcrypt
-UserSchema.pre('save', async function(next) {
-  if (!this.isModified('password')) {
-    next();
+
+// 🧠 Middleware: Only require specialization if role is DENTAL_STAFF
+UserSchema.pre('validate', function(next) {
+  if (this.role === 'PATIENT') {
+    this.specialization = null; // clear it for patients
+  } else if (this.role === 'DENTAL_STAFF' && !this.specialization) {
+    this.invalidate('specialization', 'Specialization is required for dental staff');
   }
+  next();
+});
+
+
+// 🔐 Encrypt password before saving
+UserSchema.pre('save', async function(next) {
+  if (!this.isModified('password')) return next(); // skip rehashing if password unchanged
 
   const salt = await bcrypt.genSalt(10);
   this.password = await bcrypt.hash(this.password, salt);
+  next();
 });
 
-// Sign JWT and return
+
+// 🔑 JWT
 UserSchema.methods.getSignedJwtToken = function() {
   return jwt.sign({ id: this._id }, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRE
   });
 };
 
-// Match user entered password to hashed password in database
+// 🔍 Compare passwords
 UserSchema.methods.matchPassword = async function(enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
 };

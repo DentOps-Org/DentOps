@@ -1,6 +1,7 @@
-const User = require('../models/User');
-const { validationResult } = require('express-validator');
+const User = require("../models/User");
+const { validationResult } = require("express-validator");
 
+//TODO: change the APis ig
 // @desc    Register user
 // @route   POST /api/v1/auth/register
 // @access  Public
@@ -8,16 +9,28 @@ exports.register = async (req, res) => {
   try {
     // Check for validation errors
     const errors = validationResult(req);
+    //TODO: whats this
     if (!errors.isEmpty()) {
       return res.status(400).json({ success: false, errors: errors.array() });
     }
 
-    const { fullName, email, password, role, phone, age, gender, specialization } = req.body;
+    const {
+      fullName,
+      email,
+      password,
+      role,
+      phone,
+      age,
+      gender,
+      specialization,
+    } = req.body;
 
     // Check if user already exists
     const userExists = await User.findOne({ email });
     if (userExists) {
-      return res.status(400).json({ success: false, message: 'Email already registered' });
+      return res
+        .status(400)
+        .json({ success: false, message: "Email already registered" });
     }
 
     // Create user
@@ -25,17 +38,18 @@ exports.register = async (req, res) => {
       fullName,
       email,
       password,
-      role: role || 'PATIENT',
+      role: role || "PATIENT",
       phone,
-      age: age ? parseInt(age) : undefined,
+      age: age ? parseInt(age) : undefined, //TODO:remove this undefined
       gender,
-      specialization: role === 'DENTAL_STAFF' ? (specialization || 'DENTIST') : null
+      specialization:
+        role === "DENTAL_STAFF" ? specialization || "MANAGER" : null,
     });
 
     sendTokenResponse(user, 201, res);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ success: false, message: 'Server Error' });
+    res.status(500).json({ success: false, message: "Server Error" });
   }
 };
 
@@ -53,21 +67,25 @@ exports.login = async (req, res) => {
     const { email, password } = req.body;
 
     // Check for user
-    const user = await User.findOne({ email }).select('+password');
+    const user = await User.findOne({ email }).select("+password");
     if (!user) {
-      return res.status(401).json({ success: false, message: 'Invalid credentials' });
+      return res
+        .status(401)
+        .json({ success: false, message: "Invalid credentials" });
     }
 
     // Check if password matches
     const isMatch = await user.matchPassword(password);
     if (!isMatch) {
-      return res.status(401).json({ success: false, message: 'Invalid credentials' });
+      return res
+        .status(401)
+        .json({ success: false, message: "Invalid credentials" });
     }
 
     sendTokenResponse(user, 200, res);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ success: false, message: 'Server Error' });
+    res.status(500).json({ success: false, message: "Server Error" });
   }
 };
 
@@ -80,11 +98,11 @@ exports.getMe = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      data: user
+      data: user,
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ success: false, message: 'Server Error' });
+    res.status(500).json({ success: false, message: "Server Error" });
   }
 };
 
@@ -92,14 +110,15 @@ exports.getMe = async (req, res) => {
 // @route   GET /api/v1/auth/logout
 // @access  Private
 exports.logout = (req, res) => {
-  res.cookie('token', 'none', {
+  res.cookie("token", "none", {
+    //TODO: is this countdown timer needed,remove i think
     expires: new Date(Date.now() + 10 * 1000),
-    httpOnly: true
+    httpOnly: true,
   });
 
   res.status(200).json({
     success: true,
-    data: {}
+    data: {},
   });
 };
 
@@ -112,18 +131,34 @@ const sendTokenResponse = (user, statusCode, res) => {
     expires: new Date(
       Date.now() + process.env.JWT_COOKIE_EXPIRE * 24 * 60 * 60 * 1000
     ),
-    httpOnly: true
+    httpOnly: true,
   };
 
-  if (process.env.NODE_ENV === 'production') {
+  //TODO:can remove this ig
+  if (process.env.NODE_ENV === "production") {
     options.secure = true;
   }
 
+  // res
+  //   .status(statusCode)
+  //   .cookie('token', token, options)
+  //   .json({
+  //     success: true,
+  //     token
+  //   });
+
   res
     .status(statusCode)
-    .cookie('token', token, options)
+    .cookie("token", token, options)
     .json({
       success: true,
-      token
+      token,
+      user: {
+        id: user._id,
+        fullName: user.fullName,
+        email: user.email,
+        role: user.role,
+        specialization: user.specialization,
+      },
     });
 };

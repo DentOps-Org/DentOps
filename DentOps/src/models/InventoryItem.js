@@ -6,12 +6,6 @@ const InventoryItemSchema = new mongoose.Schema({
     required: true,
     trim: true
   },
-  sku: {
-    type: String,
-    trim: true,
-    unique: true,
-    sparse: true // Allow null/undefined values to not trigger uniqueness constraint
-  },
   description: {
     type: String
   },
@@ -25,32 +19,15 @@ const InventoryItemSchema = new mongoose.Schema({
     default: 0,
     min: 0
   },
-  unit: { 
-    type: String, 
-    default: 'pcs' 
-  },
   reorderThreshold: { 
     type: Number, 
+    required: true,
     default: 5,
-    min: 0
-  },
-  reorderQuantity: {
-    type: Number,
-    default: 0,
     min: 0
   },
   price: {
     type: Number,
     min: 0
-  },
-  supplier: {
-    name: String,
-    contactInfo: String,
-    website: String
-  },
-  location: {
-    type: String,
-    default: 'Main Storage'
   },
   expiryDate: {
     type: Date
@@ -72,39 +49,22 @@ InventoryItemSchema.pre('save', function(next) {
   next();
 });
 
-// Method to check if item is low in stock
-InventoryItemSchema.methods.isLowStock = function() {
-  return this.quantity <= this.reorderThreshold;
-};
-
-// Method to adjust quantity
+// Instance method: adjust quantity and save
 InventoryItemSchema.methods.adjustQuantity = async function(delta, dentalStaffId) {
-  if (this.quantity + delta < 0) {
+  if (typeof delta !== 'number' || Number.isNaN(delta)) {
+    throw new Error('Delta must be a number');
+  }
+
+  const newQty = this.quantity + delta;
+  if (newQty < 0) {
     throw new Error('Cannot reduce quantity below zero');
   }
-  
-  this.quantity += delta;
+
+  this.quantity = newQty;
   this.lastUpdated = Date.now();
   this.updatedBy = dentalStaffId;
-  
+
   return this.save();
-};
-
-// Static method to adjust quantity by item ID
-InventoryItemSchema.statics.adjustQuantity = async function(itemId, delta, dentalStaffId) {
-  const item = await this.findById(itemId);
-  if (!item) {
-    throw new Error('Inventory item not found');
-  }
-  
-  return await item.adjustQuantity(delta, dentalStaffId);
-};
-
-// Static method to get all low stock items
-InventoryItemSchema.statics.getLowStockItems = function() {
-  return this.find({
-    $expr: { $lte: ['$quantity', '$reorderThreshold'] }
-  });
 };
 
 module.exports = mongoose.model('InventoryItem', InventoryItemSchema);

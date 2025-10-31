@@ -1,6 +1,6 @@
 const express = require('express');
 const { check } = require('express-validator');
-const { 
+const {
   getAvailability,
   createAvailability,
   updateAvailability,
@@ -11,32 +11,42 @@ const { protect, authorize } = require('../middleware/auth');
 
 const router = express.Router();
 
-// Protect all routes
+// All routes protected
 router.use(protect);
 
-// Get availability for a dental staff member
+// View availability (any authenticated user) //TODO:add that this can only be accessed by dental_staff,use authorize() here
 router.get('/:dentalStaffId', getAvailability);
 
-// Get free time windows for a dental staff member
+// Free windows (any authenticated user)
 router.get('/:dentalStaffId/free-windows', getFreeWindows);
 
-// Create availability block
+// Clinic Manager only for mutating operations
 router.post(
   '/',
+  protect,
+  authorize('CLINIC_MANAGER'),
   [
-    check('dentalStaffId', 'Dental staff ID is required').not().isEmpty(),
-    check('weekday', 'Weekday is required').isInt({ min: 0, max: 6 }),
-    check('startTimeOfDay', 'Start time is required').matches(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/),
-    check('endTimeOfDay', 'End time is required').matches(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/)
+    check('dentalStaffId', 'Dental staff ID is required').notEmpty(),
+    check('weekday', 'Weekday is required (0-6)').isInt({ min: 0, max: 6 }),
+    check('startTimeOfDay', 'Start time is required (HH:MM)').matches(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/),
+    check('endTimeOfDay', 'End time is required (HH:MM)').matches(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/)
   ],
-  authorize('DENTAL_STAFF'),
   createAvailability
 );
 
-// Update and delete availability blocks
-router
-  .route('/:id')
-  .put(authorize('DENTAL_STAFF'), updateAvailability)
-  .delete(authorize('DENTAL_STAFF'), deleteAvailability);
+// Full replace update (PUT) and hard delete — Clinic Manager only
+router.route('/:id')
+  .put(
+    protect,
+    authorize('CLINIC_MANAGER'),
+    [
+      check('dentalStaffId', 'Dental staff ID is required').notEmpty(),
+      check('weekday', 'Weekday is required (0-6)').isInt({ min: 0, max: 6 }),
+      check('startTimeOfDay', 'Start time is required (HH:MM)').matches(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/),
+      check('endTimeOfDay', 'End time is required (HH:MM)').matches(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/)
+    ],
+    updateAvailability
+  )
+  .delete(protect, authorize('CLINIC_MANAGER'), deleteAvailability);
 
 module.exports = router;

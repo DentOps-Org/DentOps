@@ -7,11 +7,11 @@ const AppointmentTypeSchema = new mongoose.Schema({
     trim: true,
     unique: true
   },
-  durationMinutes: { // Duration in minutes
+  durationMinutes: {
     type: Number,
     required: true,
     min: 15,
-    max: 300 // Max 5 hours
+    max: 300
   },
   description: {
     type: String,
@@ -20,15 +20,7 @@ const AppointmentTypeSchema = new mongoose.Schema({
   isActive: {
     type: Boolean,
     default: true
-  },
-  createdAt: {
-    type: Date,
-    default: Date.now
   }
-});
-
-// Index for efficient queries
-AppointmentTypeSchema.index({ name: 1 });
-AppointmentTypeSchema.index({ isActive: 1 });
+}, { timestamps: true });
 
 module.exports = mongoose.model('AppointmentType', AppointmentTypeSchema);

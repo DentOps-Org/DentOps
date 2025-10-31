@@ -10,13 +10,13 @@ const router = express.Router();
 router.get('/me', protect, getMe);
 
 // Get providers (accessible by all authenticated users)
-router.get('/providers', protect, getProviders);
+router.get('/providers', protect, getProviders); //TODO:whats the need for this??
 
 // Routes for /users
 router
   .route('/')
   .get(protect, authorize('DENTAL_STAFF'), getUsers)
-  .post(
+  .post( //TODO: dont get this one , is it even required?? redundant
     protect,
     authorize('DENTAL_STAFF'),
     [
@@ -31,6 +31,6 @@ router
   .route('/:id')
   .get(protect, getUser)
   .put(protect, updateUser)
-  .delete(protect, authorize('DENTAL_STAFF'), deleteUser);
+  .delete(protect, authorize('DENTAL_STAFF'), deleteUser); //TODO: not implemented yet
 
 module.exports = router;

@@ -50,7 +50,8 @@ exports.getUsers = async (req, res) => {
 // @access  Private
 exports.getProviders = async (req, res) => {
   try {
-    const providers = await User.find({ role: 'DENTAL_STAFF' })
+    //TODO:only the dentist should be here
+    const providers = await User.find({ specialization: 'DENTIST' })
       .select('-password')
       .sort({ fullName: 1 });
     
@@ -106,6 +107,7 @@ exports.getUser = async (req, res) => {
 // @desc    Create new user
 // @route   POST /api/users
 // @access  Private (Clinic Manager only)
+//TODO: when would this happen??i think its redundant 
 exports.createUser = async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {

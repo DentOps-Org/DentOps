@@ -1,172 +1,134 @@
-import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import { authService } from '../../services/api';
-
-// Get user from localStorage
-const user = localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')) : null;
-const token = localStorage.getItem('token');
+// src/redux/slices/authSlice.js
+import { createSlice } from "@reduxjs/toolkit";
+import api from "../../api/axios";
 
 const initialState = {
-  user: user,
-  token: token,
-  isAuthenticated: !!token,
+  user: null,
+  token: localStorage.getItem("token") || null,
+  isAuthenticated: !!localStorage.getItem("token"),
   isLoading: false,
   error: null,
 };
 
-// Login user
-export const login = createAsyncThunk(
-  'auth/login',
-  async (credentials, { rejectWithValue }) => {
-    try {
-      const response = await authService.login(credentials);
-      
-      if (response.success) {
-        localStorage.setItem('token', response.token);
-        localStorage.setItem('user', JSON.stringify(response.data || {}));
-        return {
-          user: response.data || {},
-          token: response.token
-        };
-      } else {
-        return rejectWithValue(response.message || 'Login failed');
-      }
-    } catch (error) {
-      return rejectWithValue(
-        error.response?.data?.message || 'Authentication failed'
-      );
-    }
-  }
-);
-
-// Register user
-export const register = createAsyncThunk(
-  'auth/register',
-  async (userData, { rejectWithValue }) => {
-    try {
-      const response = await authService.register(userData);
-      
-      if (response.success) {
-        localStorage.setItem('token', response.token);
-        localStorage.setItem('user', JSON.stringify(response.data || {}));
-        return {
-          user: response.data || {},
-          token: response.token
-        };
-      } else {
-        return rejectWithValue(response.message || 'Registration failed');
-      }
-    } catch (error) {
-      return rejectWithValue(
-        error.response?.data?.message || 'Registration failed'
-      );
-    }
-  }
-);
-
-// Logout user
-export const logout = createAsyncThunk(
-  'auth/logout',
-  async (_, { rejectWithValue }) => {
-    try {
-      await authService.logout();
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      return null;
-    } catch (error) {
-      console.error('Logout error:', error);
-      // Still remove from localStorage even if API call fails
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      return rejectWithValue(error.response?.data?.message || 'Logout failed');
-    }
-  }
-);
-
-// Get current user
-export const getCurrentUser = createAsyncThunk(
-  'auth/getCurrentUser',
-  async (_, { rejectWithValue }) => {
-    try {
-      const response = await authService.getCurrentUser();
-      
-      if (response.success) {
-        localStorage.setItem('user', JSON.stringify(response.data || {}));
-        return response.data;
-      } else {
-        return rejectWithValue(response.message || 'Failed to get user data');
-      }
-    } catch (error) {
-      return rejectWithValue(
-        error.response?.data?.message || 'Failed to get user data'
-      );
-    }
-  }
-);
-
 const authSlice = createSlice({
-  name: 'auth',
+  name: "auth",
   initialState,
   reducers: {
-    resetAuthError: (state) => {
+    setLoading(state, action) {
+      state.isLoading = action.payload ?? true;
+    },
+    setError(state, action) {
+      state.error = action.payload;
+      state.isLoading = false;
+    },
+    setAuth(state, action) {
+      const payload = action.payload;
+
+      if (payload.user) {
+        state.user = payload.user;
+      } else if (payload.token && !state.user) {
+        // handled later if needed (via /auth/me)
+      }
+
+      if (payload.token) {
+        state.token = payload.token;
+        localStorage.setItem("token", payload.token);
+        state.isAuthenticated = true;
+      }
+
+      state.isLoading = false;
       state.error = null;
     },
-  },
-  extraReducers: (builder) => {
-    builder
-      // Login cases
-      .addCase(login.pending, (state) => {
-        state.isLoading = true;
-        state.error = null;
-      })
-      .addCase(login.fulfilled, (state, action) => {
-        state.isLoading = false;
-        state.isAuthenticated = true;
-        state.user = action.payload.user;
-        state.token = action.payload.token;
-      })
-      .addCase(login.rejected, (state, action) => {
-        state.isLoading = false;
-        state.error = action.payload;
-      })
-      
-      // Register cases
-      .addCase(register.pending, (state) => {
-        state.isLoading = true;
-        state.error = null;
-      })
-      .addCase(register.fulfilled, (state, action) => {
-        state.isLoading = false;
-        state.isAuthenticated = true;
-        state.user = action.payload.user;
-        state.token = action.payload.token;
-      })
-      .addCase(register.rejected, (state, action) => {
-        state.isLoading = false;
-        state.error = action.payload;
-      })
-      
-      // Logout case
-      .addCase(logout.fulfilled, (state) => {
-        state.user = null;
-        state.token = null;
-        state.isAuthenticated = false;
-      })
-      
-      // Get current user cases
-      .addCase(getCurrentUser.pending, (state) => {
-        state.isLoading = true;
-      })
-      .addCase(getCurrentUser.fulfilled, (state, action) => {
-        state.isLoading = false;
-        state.user = action.payload;
-      })
-      .addCase(getCurrentUser.rejected, (state, action) => {
-        state.isLoading = false;
-        state.error = action.payload;
-      });
+    clearAuth(state) {
+      state.user = null;
+      state.token = null;
+      state.isAuthenticated = false;
+      state.isLoading = false;
+      state.error = null;
+      localStorage.removeItem("token");
+    },
   },
 });
 
-export const { resetAuthError } = authSlice.actions;
-
+export const { setLoading, setError, setAuth, clearAuth } = authSlice.actions;
 export default authSlice.reducer;
+
+// -------------------------
+// ✅ LOGIN
+// -------------------------
+export const loginUser = (formData, navigate) => async (dispatch) => {
+  try {
+    dispatch(setLoading(true));
+    dispatch(setError(null));
+    const res = await api.post("/auth/login", formData, { withCredentials: true });
+
+    if (res.data?.user && res.data?.token) {
+      dispatch(setAuth({ user: res.data.user, token: res.data.token }));
+    } else if (res.data?.token) {
+      dispatch(setAuth({ token: res.data.token }));
+      try {
+        const me = await api.get("/auth/me", {
+          headers: { Authorization: `Bearer ${res.data.token}` },
+        });
+        dispatch(setAuth({ user: me.data.data }));
+      } catch (err) {
+        console.warn("fetch current user failed", err);
+      }
+    } else {
+      dispatch(setError("Invalid login response from server"));
+      return;
+    }
+
+    // ✅ redirect after successful login
+    const user = res.data.user || (await (await api.get("/auth/me")).data?.data);
+    if (user?.role === "PATIENT") navigate("/dashboard/patient");
+    else if (user?.role === "DENTAL_STAFF" && user?.specialization === "DENTIST")
+      navigate("/dashboard/dentist");
+    else if (user?.role === "DENTAL_STAFF" && user?.specialization === "CLINIC_MANAGER")
+      navigate("/dashboard/manager");
+    else navigate("/");
+  } catch (err) {
+    dispatch(setError(err.response?.data?.message || err.message || "Login failed"));
+  }
+};
+
+// -------------------------
+// ✅ REGISTER
+// -------------------------
+export const registerUser = (formData, navigate) => async (dispatch) => {
+  try {
+    dispatch(setLoading(true));
+    dispatch(setError(null));
+
+    const res = await api.post("/auth/register", formData, { withCredentials: true });
+
+    // Expect backend to return token + user
+    if (res.data?.user && res.data?.token) {
+      dispatch(setAuth({ user: res.data.user, token: res.data.token }));
+    } else if (res.data?.token) {
+      dispatch(setAuth({ token: res.data.token }));
+      try {
+        const me = await api.get("/auth/me", {
+          headers: { Authorization: `Bearer ${res.data.token}` },
+        });
+        dispatch(setAuth({ user: me.data.data }));
+      } catch (err) {
+        console.warn("fetch current user failed", err);
+      }
+    } else {
+      dispatch(setError("Invalid registration response from server"));
+      return;
+    }
+
+    // ✅ redirect based on role
+    const user = res.data.user || (await (await api.get("/auth/me")).data?.data);
+    if (user?.role === "PATIENT") navigate("/dashboard/patient");
+    else if (user?.role === "DENTAL_STAFF" && user?.specialization === "DENTIST")
+      navigate("/dashboard/dentist");
+    else if (user?.role === "DENTAL_STAFF" && user?.specialization === "CLINIC_MANAGER")
+      navigate("/dashboard/manager");
+    else navigate("/");
+  } catch (err) {
+    dispatch(setError(err.response?.data?.message || err.message || "Registration failed"));
+  }
+};

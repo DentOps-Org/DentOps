@@ -1,234 +1,249 @@
 const Availability = require('../models/Availability');
 const User = require('../models/User');
+const Appointment = require('../models/Appointment');
+const AppointmentType = require('../models/AppointmentType');
 const { validationResult } = require('express-validator');
+const mongoose = require('mongoose');
 
-// @desc    Get availability for a dental staff member
-// @route   GET /api/availability/:dentalStaffId
-// @access  Private
+/** Helpers **/
+function parseTimeToDate(targetDate, hhmm) {
+  const [hh, mm] = hhmm.split(':').map(Number);
+  const d = new Date(targetDate);
+  d.setHours(hh, mm, 0, 0);
+  return d;
+}
+function addMinutes(d, mins) {
+  return new Date(d.getTime() + mins * 60000);
+}
+function formatHHMM(d) {
+  const hh = String(d.getHours()).padStart(2, '0');
+  const mm = String(d.getMinutes()).padStart(2, '0');
+  return `${hh}:${mm}`;
+}
+
+/**
+ * GET availability (all blocks for a dentist)
+ * GET /api/availability/:dentalStaffId
+ */
 exports.getAvailability = async (req, res) => {
   try {
     const { dentalStaffId } = req.params;
-    const { date } = req.query;
-    
-    // Check if dental staff exists
+    if (!mongoose.Types.ObjectId.isValid(dentalStaffId)) {
+      return res.status(400).json({ success: false, message: 'Invalid dentalStaffId' });
+    }
+
     const dentalStaff = await User.findById(dentalStaffId);
     if (!dentalStaff || dentalStaff.role !== 'DENTAL_STAFF') {
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid dental staff member'
-      });
+      return res.status(400).json({ success: false, message: 'Invalid dental staff member' });
     }
-    
-    let availability;
-    if (date) {
-      // Get availability for specific date
-      availability = await Availability.listForDate(dentalStaffId, date);
-    } else {
-      // Get all availability blocks
-      availability = await Availability.find({ dentalStaffId }).sort({ weekday: 1, startTimeOfDay: 1 });
-    }
-    
-    res.status(200).json({
-      success: true,
-      count: availability.length,
-      data: availability
-    });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({
-      success: false,
-      message: 'Server Error'
-    });
+
+    const availability = await Availability.find({ dentalStaffId }).sort({ weekday: 1, startTimeOfDay: 1 });
+    return res.status(200).json({ success: true, count: availability.length, data: availability });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ success: false, message: 'Server Error' });
   }
 };
 
-// @desc    Create availability block
-// @route   POST /api/availability
-// @access  Private (Dental Staff only)
+/**
+ * CREATE availability
+ * POST /api/availability
+ * (Route should be protected & authorized)
+ */
 exports.createAvailability = async (req, res) => {
   const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return res.status(400).json({
-      success: false,
-      errors: errors.array()
-    });
-  }
-  
+  if (!errors.isEmpty()) return res.status(400).json({ success: false, errors: errors.array() });
+
   try {
-    const { dentalStaffId, weekday, startTimeOfDay, endTimeOfDay, isRecurring, startDate, endDate } = req.body;
-    
-    // Check if user is dental staff
-    if (req.user.role !== 'DENTAL_STAFF') {
-      return res.status(403).json({
-        success: false,
-        message: 'Only dental staff can create availability blocks'
-      });
+    const { dentalStaffId, weekday, startTimeOfDay, endTimeOfDay } = req.body;
+
+    if (!mongoose.Types.ObjectId.isValid(dentalStaffId)) {
+      return res.status(400).json({ success: false, message: 'Invalid dentalStaffId' });
     }
-    
-    // Check if dental staff exists
+
     const dentalStaff = await User.findById(dentalStaffId);
     if (!dentalStaff || dentalStaff.role !== 'DENTAL_STAFF') {
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid dental staff member'
-      });
+      return res.status(400).json({ success: false, message: 'Invalid dental staff member' });
     }
-    
-    // Create availability block
-    const availability = await Availability.createBlock(
-      dentalStaffId,
-      weekday,
-      startTimeOfDay,
-      endTimeOfDay,
-      isRecurring,
-      startDate ? new Date(startDate) : null,
-      endDate ? new Date(endDate) : null
-    );
-    
-    res.status(201).json({
-      success: true,
-      data: availability
-    });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({
-      success: false,
-      message: 'Server Error'
-    });
+
+    // Ensure start < end
+    const sample = new Date();
+    const s = parseTimeToDate(sample, startTimeOfDay);
+    const e = parseTimeToDate(sample, endTimeOfDay);
+    if (s >= e) return res.status(400).json({ success: false, message: 'startTimeOfDay must be before endTimeOfDay' });
+
+    // Enforce uniqueness: one block per weekday per staff
+    // For eg. Monday:
+    // 09:00–12:00
+    // 14:00–17:00   ❌ not allowed
+    // Monday:
+    // 09:00–17:00   ✅ 1 block only
+    const exists = await Availability.findOne({ dentalStaffId, weekday });
+    if (exists) return res.status(400).json({ success: false, message: 'Availability for this weekday already exists for the staff' });
+
+    const availability = await Availability.create({ dentalStaffId, weekday, startTimeOfDay, endTimeOfDay });
+    return res.status(201).json({ success: true, data: availability });
+  } catch (err) {
+    console.error(err);
+    if (err.code === 11000) {
+      return res.status(400).json({ success: false, message: 'Availability for this weekday already exists for the staff' });
+    }
+    return res.status(500).json({ success: false, message: 'Server Error' });
   }
 };
 
-// @desc    Update availability block
-// @route   PUT /api/availability/:id
-// @access  Private (Dental Staff only)
+/**
+ * UPDATE availability (FULL REPLACE)
+ * PUT /api/availability/:id
+ * (Route should be protected & authorized)
+ */
 exports.updateAvailability = async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) return res.status(400).json({ success: false, errors: errors.array() });
+
   try {
-    if (req.user.role !== 'DENTAL_STAFF') {
-      return res.status(403).json({
-        success: false,
-        message: 'Only dental staff can update availability blocks'
-      });
+    const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) return res.status(400).json({ success: false, message: 'Invalid availability id' });
+
+    const { dentalStaffId, weekday, startTimeOfDay, endTimeOfDay } = req.body;
+
+    if (!mongoose.Types.ObjectId.isValid(dentalStaffId)) {
+      return res.status(400).json({ success: false, message: 'Invalid dentalStaffId' });
     }
-    
-    const availability = await Availability.findById(req.params.id);
-    if (!availability) {
-      return res.status(404).json({
-        success: false,
-        message: 'Availability block not found'
-      });
+
+    const dentalStaff = await User.findById(dentalStaffId);
+    if (!dentalStaff || dentalStaff.role !== 'DENTAL_STAFF') {
+      return res.status(400).json({ success: false, message: 'Invalid dental staff member' });
     }
-    
-    // Update availability
-    const updatedAvailability = await Availability.findByIdAndUpdate(
-      req.params.id,
-      req.body,
-      { new: true, runValidators: true }
-    );
-    
-    res.status(200).json({
-      success: true,
-      data: updatedAvailability
-    });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({
-      success: false,
-      message: 'Server Error'
-    });
+
+    // Ensure start < end
+    const sample = new Date();
+    const s = parseTimeToDate(sample, startTimeOfDay);
+    const e = parseTimeToDate(sample, endTimeOfDay);
+    if (s >= e) return res.status(400).json({ success: false, message: 'startTimeOfDay must be before endTimeOfDay' });
+
+    const availability = await Availability.findById(id);
+    if (!availability) return res.status(404).json({ success: false, message: 'Availability block not found' });
+
+    // If changing staff or weekday ensure no conflict
+    if (String(availability.dentalStaffId) !== String(dentalStaffId) || availability.weekday !== weekday) {
+      const conflict = await Availability.findOne({ dentalStaffId, weekday, _id: { $ne: availability._id } });
+      if (conflict) return res.status(400).json({ success: false, message: 'Another availability block for this staff & weekday already exists' });
+    }
+
+    // Full replace
+    availability.dentalStaffId = dentalStaffId;
+    availability.weekday = weekday;
+    availability.startTimeOfDay = startTimeOfDay;
+    availability.endTimeOfDay = endTimeOfDay;
+    await availability.save();
+
+    return res.status(200).json({ success: true, data: availability });
+  } catch (err) {
+    console.error(err);
+    if (err.code === 11000) return res.status(400).json({ success: false, message: 'Availability conflict' });
+    return res.status(500).json({ success: false, message: 'Server Error' });
   }
 };
 
-// @desc    Delete availability block
-// @route   DELETE /api/availability/:id
-// @access  Private (Dental Staff only)
+/**
+ * DELETE availability (hard delete)
+ * DELETE /api/availability/:id
+ * (Route should be protected & authorized)
+ */
 exports.deleteAvailability = async (req, res) => {
   try {
-    if (req.user.role !== 'DENTAL_STAFF') {
-      return res.status(403).json({
-        success: false,
-        message: 'Only dental staff can delete availability blocks'
-      });
-    }
-    
-    const availability = await Availability.findById(req.params.id);
-    if (!availability) {
-      return res.status(404).json({
-        success: false,
-        message: 'Availability block not found'
-      });
-    }
-    
-    await availability.remove();
-    
-    res.status(200).json({
-      success: true,
-      data: {}
-    });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({
-      success: false,
-      message: 'Server Error'
-    });
+    const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) return res.status(400).json({ success: false, message: 'Invalid availability id' });
+
+    const availability = await Availability.findById(id);
+    if (!availability) return res.status(404).json({ success: false, message: 'Availability block not found' });
+
+    await availability.deleteOne();
+    return res.status(200).json({ success: true, message: 'Availability deleted' });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ success: false, message: 'Server Error' });
   }
 };
 
-// @desc    Get free time windows for a dental staff member
-// @route   GET /api/availability/:dentalStaffId/free-windows
-// @access  Private
+// GET free windows — simplified rules ,TODO:check this ....
 exports.getFreeWindows = async (req, res) => {
   try {
     const { dentalStaffId } = req.params;
-    const { date, appointmentTypeId, durationMinutes, slotIntervalMinutes, bufferAfter } = req.query;
-    
-    if (!date) {
-      return res.status(400).json({
-        success: false,
-        message: 'Date is required'
-      });
-    }
-    
-    // Check if dental staff exists
+    const { date, appointmentTypeId, durationMinutes, slotIntervalMinutes } = req.query;
+
+    if (!date) return res.status(400).json({ success: false, message: 'date query param is required (YYYY-MM-DD)' });
+    if (!mongoose.Types.ObjectId.isValid(dentalStaffId)) return res.status(400).json({ success: false, message: 'Invalid dentalStaffId' });
+
+    const targetDate = new Date(date);
+    if (isNaN(targetDate.getTime())) return res.status(400).json({ success: false, message: 'Invalid date' });
+
     const dentalStaff = await User.findById(dentalStaffId);
-    if (!dentalStaff || dentalStaff.role !== 'DENTAL_STAFF') {
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid dental staff member'
-      });
+    if (!dentalStaff || dentalStaff.role !== 'DENTIST') { //TODO:check here
+      return res.status(400).json({ success: false, message: 'Invalid dental staff member' });
     }
-    
-    // Get appointment type duration if provided
-    let duration = durationMinutes ? parseInt(durationMinutes) : 30;
-    if (appointmentTypeId) {
-      const AppointmentType = require('../models/AppointmentType');
-      const appointmentType = await AppointmentType.findById(appointmentTypeId);
-      if (appointmentType) {
-        duration = appointmentType.durationMinutes;
-      }
+
+    // determine duration (appointmentType priority)
+    let duration = durationMinutes ? parseInt(durationMinutes, 10) : null;
+    if (!duration && appointmentTypeId && mongoose.Types.ObjectId.isValid(appointmentTypeId)) {
+      const at = await AppointmentType.findById(appointmentTypeId);
+      if (at) duration = at.durationMinutes;
     }
+    if (!duration) duration = 30; // this is by default 30 here
+
+    const slotInterval = slotIntervalMinutes ? parseInt(slotIntervalMinutes, 10) : 15; //TODO:why is this needed
     
-    const slotInterval = slotIntervalMinutes ? parseInt(slotIntervalMinutes) : 30;
-    const buffer = bufferAfter ? parseInt(bufferAfter) : 10;
-    
-    // Get free windows
-    const freeWindows = await Availability.computeFreeWindows(
+    // Fetch single block for weekday (one-per-weekday rule)
+    const weekday = targetDate.getDay();
+    const block = await Availability.findOne({ dentalStaffId, weekday });
+    if (!block) return res.status(200).json({ success: true, count: 0, data: [] });
+
+    const blockStart = parseTimeToDate(targetDate, block.startTimeOfDay);
+    const blockEnd = parseTimeToDate(targetDate, block.endTimeOfDay);
+
+    // Fetch existing CONFIRMED appointments for that day (these block slots)
+    const startOfDay = new Date(targetDate); startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(targetDate); endOfDay.setHours(23, 59, 59, 999);
+
+    // only CONFIRMED block slots (PENDING without startTime won't block)
+    const existingConfirmed = await Appointment.find({
       dentalStaffId,
-      date,
-      duration,
-      slotInterval,
-      buffer
-    );
-    
-    res.status(200).json({
-      success: true,
-      count: freeWindows.length,
-      data: freeWindows
-    });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({
-      success: false,
-      message: 'Server Error'
-    });
+      status: 'CONFIRMED',
+      startTime: { $gte: startOfDay, $lte: endOfDay }
+    }).sort({ startTime: 1 });
+
+    // Generate candidate slots: start must be inside [blockStart, blockEnd)
+    const freeWindows = [];
+    let cursor = new Date(blockStart);
+
+    while (cursor < blockEnd) {
+      const slotEnd = addMinutes(cursor, duration);
+
+      // Conflict if overlaps any confirmed appointment
+      const conflict = existingConfirmed.some(appt => {
+        const s = new Date(appt.startTime);
+        const e = new Date(appt.endTime);
+        return (cursor < e && slotEnd > s); // overlap check
+      });
+
+      if (!conflict) {
+        freeWindows.push({
+          start: new Date(cursor),
+          end: new Date(slotEnd),
+          startIso: new Date(cursor).toISOString(),
+          endIso: new Date(slotEnd).toISOString(),
+          startHHMM: formatHHMM(cursor),
+          endHHMM: formatHHMM(slotEnd)
+        });
+      }
+
+      cursor = addMinutes(cursor, slotInterval);
+    }
+
+    return res.status(200).json({ success: true, count: freeWindows.length, data: freeWindows });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ success: false, message: 'Server Error' });
   }
 };

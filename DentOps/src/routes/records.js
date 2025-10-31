@@ -5,43 +5,28 @@ const {
   getRecord,
   createRecord,
   updateRecord,
-  deleteRecord,
-  archiveRecord,
-  downloadRecord,
-  upload
+  deleteRecord
 } = require('../controllers/records');
-const { protect, authorize } = require('../middleware/auth');
+const { protect } = require('../middleware/auth');
 
 const router = express.Router();
 
-// Protect all routes
+// All routes are protected
 router.use(protect);
 
-// Get all records
-router.get('/', getRecords);
+router.route('/')
+  .get(getRecords)
+  .post(
+    [
+      check('title', 'Title is required').not().isEmpty(),
+      check('type', 'Type is required').not().isEmpty()
+    ],
+    createRecord
+  );
 
-// Get, update, delete single record
-router
-  .route('/:id')
+router.route('/:id')
   .get(getRecord)
   .put(updateRecord)
   .delete(deleteRecord);
-
-// Archive record
-router.put('/:id/archive', authorize('DENTAL_STAFF'), archiveRecord);
-
-// Download record file
-router.get('/:id/download', downloadRecord);
-
-// Create new record - both dental staff and patients
-router.post(
-  '/',
-  upload,
-  [
-    check('type', 'Record type is required').not().isEmpty(),
-    check('title', 'Record title is required').not().isEmpty()
-  ],
-  createRecord
-);
 
 module.exports = router;
