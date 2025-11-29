@@ -132,3 +132,62 @@ export const registerUser = (formData, navigate) => async (dispatch) => {
     dispatch(setError(err.response?.data?.message || err.message || "Registration failed"));
   }
 };
+
+// -------------------------
+// ✅ LOAD USER FROM TOKEN (Auto-login on page load)
+// -------------------------
+export const loadUserFromToken = () => async (dispatch, getState) => {
+  try {
+    const { token } = getState().auth;
+    
+    // No token = no auto-login
+    if (!token) {
+      return;
+    }
+
+    dispatch(setLoading(true));
+    
+    // Fetch current user using stored token
+    const res = await api.get("/auth/me");
+    
+    if (res.data?.data || res.data?.user) {
+      const userData = res.data.data || res.data.user;
+      dispatch(setAuth({ user: userData }));
+    } else {
+      // Invalid response, clear auth
+      dispatch(clearAuth());
+    }
+  } catch (err) {
+    console.error("Auto-login failed:", err);
+    
+    // If 401 Unauthorized, token is expired/invalid
+    if (err.response?.status === 401) {
+      dispatch(clearAuth());
+    } else {
+      dispatch(setLoading(false));
+    }
+  }
+};
+
+// -------------------------
+// ✅ LOGOUT
+// -------------------------
+export const logoutUser = (navigate) => async (dispatch) => {
+  try {
+    // Optional: Call backend logout endpoint if it exists
+    // await api.post('/auth/logout');
+    
+    dispatch(clearAuth());
+    
+    if (navigate) {
+      navigate('/login');
+    }
+  } catch (err) {
+    console.error('Logout error:', err);
+    // Still clear auth even if backend call fails
+    dispatch(clearAuth());
+    if (navigate) {
+      navigate('/login');
+    }
+  }
+};
