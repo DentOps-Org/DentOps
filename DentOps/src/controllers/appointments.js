@@ -67,7 +67,7 @@ exports.listRequests = async (req, res) => {
 
     const { status = 'PENDING' } = req.query;
     const reqs = await Appointment.find({ status })
-      .populate('patientId', 'name email')
+      .populate('patientId', 'fullName email phone')
       .populate('appointmentTypeId', 'name durationMinutes')
       .sort({ createdAt: 1 });
 
@@ -110,15 +110,48 @@ exports.confirmAppointment = async (req, res) => {
     const s = new Date(startTime);
     if (isNaN(s.getTime())) return res.status(400).json({ success:false, message: 'Invalid startTime' });
 
-    // enforce same calendar date as requestedDate
-    const reqDate = new Date(appt.requestedDate);
-    if (!(s.getFullYear() === reqDate.getFullYear() && s.getMonth() === reqDate.getMonth() && s.getDate() === reqDate.getDate())) {
-      return res.status(400).json({ success:false, message: 'startTime must be on the requested date' });
+    // VALIDATE AGAINST AVAILABILITY WINDOW
+    const weekday = s.getDay(); // 0-6 (Sunday-Saturday)
+    const block = await Availability.findOne({ dentalStaffId, weekday });
+
+    if (!block) {
+      const dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+      return res.status(400).json({ 
+        success: false, 
+        message: `Dentist is not available on ${dayNames[weekday]}s` 
+      });
     }
+
+    // Parse availability times to compare
+    const [avStartHour, avStartMin] = block.startTimeOfDay.split(':').map(Number);
+    const [avEndHour, avEndMin] = block.endTimeOfDay.split(':').map(Number);
+
+    // Create Date objects for comparison on the same day as appointment
+    const availStart = new Date(s);
+    availStart.setHours(avStartHour, avStartMin, 0, 0);
+
+    const availEnd = new Date(s);
+    availEnd.setHours(avEndHour, avEndMin, 0, 0);
 
     // compute endTime from appointmentType.durationMinutes
     const duration = Number(at.durationMinutes) || 15;
     const e = addMinutes(s, duration);
+
+    // Validate appointment start falls within availability window
+    if (s < availStart || s >= availEnd) {
+      return res.status(400).json({ 
+        success: false, 
+        message: `Appointment start time must be between ${block.startTimeOfDay} and ${block.endTimeOfDay}` 
+      });
+    }
+
+    // Validate appointment end doesn't exceed availability window
+    if (e > availEnd) {
+      return res.status(400).json({ 
+        success: false, 
+        message: `Appointment end time (${formatHHMM(e)}) exceeds dentist's working hours (ends at ${block.endTimeOfDay})` 
+      });
+    }
 
     // conflict check: only CONFIRMED appointments for this dentist block
     const conflict = await Appointment.findOne({
@@ -139,9 +172,8 @@ exports.confirmAppointment = async (req, res) => {
     appt.endTime = e;
     appt.status = 'CONFIRMED';
 
-    // optionally save which availability block was used (if block exists)
-    const block = await Availability.findOne({ dentalStaffId, weekday: s.getDay() });
-    if (block) appt.availabilityId = block._id;
+    // Save which availability block was used (block is guaranteed to exist now)
+    appt.availabilityId = block._id;
 
     await appt.save();
     return res.status(200).json({ success:true, data: appt });
@@ -259,8 +291,8 @@ exports.getAppointment = async (req, res) => {
     if (!mongoose.Types.ObjectId.isValid(id)) return res.status(400).json({ success:false, message: 'Invalid id' });
 
     const appt = await Appointment.findById(id)
-      .populate('patientId', 'name email')
-      .populate('dentalStaffId', 'name email')
+      .populate('patientId', 'fullName email')
+      .populate('dentalStaffId', 'fullName email')
       .populate('appointmentTypeId', 'name durationMinutes');
 
     if (!appt) return res.status(404).json({ success:false, message: 'Appointment not found' });

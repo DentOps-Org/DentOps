@@ -9,7 +9,7 @@ export default function LoginPage() {
   const navigate = useNavigate();
   const { user, isLoading, error, isAuthenticated } = useSelector((s) => s.auth);
 
-  const [formData, setFormData] = useState({ email: "", password: "" });
+  const [formData, setFormData] = useState({ email: "", password: "123456" });
 
   useEffect(() => {
     // if already logged in, redirect to appropriate dashboard
