@@ -55,19 +55,6 @@ export default function Navbar() {
             </Link>
           </div>
 
-          {/* Center / nav links */}
-          <nav className="hidden md:flex items-center space-x-4">
-            <Link to={dashboardRoute} className="text-sm text-gray-700 hover:text-blue-600">
-              Dashboard
-            </Link>
-            <Link to="/appointment-types" className="text-sm text-gray-700 hover:text-blue-600">
-              Appointment Types
-            </Link>
-            <Link to="/appointments" className="text-sm text-gray-700 hover:text-blue-600">
-              Appointments
-            </Link>
-          </nav>
-
           {/* Right: user info and logout */}
           <div className="flex items-center space-x-3">
             {isAuthenticated && user ? (

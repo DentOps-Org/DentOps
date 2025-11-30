@@ -1,8 +1,9 @@
-// src/pages/Dashboard/DentistAppointments.jsx
+// src/pages/Appointments/DentistAppointments.jsx
 import { useEffect, useState } from "react";
 import axios from "../../api/axios";
 import { useSelector } from "react-redux";
 import { Link } from "react-router-dom";
+import Navbar from "../../components/Navbar";
 
 export default function DentistAppointments() {
   const { user } = useSelector((s) => s.auth);
@@ -55,8 +56,10 @@ export default function DentistAppointments() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-5xl mx-auto bg-white rounded-lg shadow-md p-6">
+    <div className="min-h-screen bg-gray-50">
+      <Navbar />
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="bg-white rounded-lg shadow-md p-6">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-bold">My Appointments</h2>
           <Link to="/dashboard/dentist" className="text-sm text-blue-600 hover:text-blue-800">← Back to Dashboard</Link>
@@ -117,6 +120,7 @@ export default function DentistAppointments() {
               </div>
             </div>
           ))}
+        </div>
         </div>
       </div>
     </div>

@@ -7,6 +7,7 @@ import {
   adjustInventoryQuantity
 } from "../../redux/slices/inventorySlice";
 import { useNavigate, Link } from "react-router-dom";
+import Navbar from "../../components/Navbar";
 
 /** Helper: pick dashboard route based on user */
 function getDashboardRoute(user) {
@@ -54,32 +55,34 @@ export default function InventoryList() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="max-w-6xl mx-auto mt-8 p-6 bg-white rounded-lg shadow-md">
-        {/* Top row: Back button + title + actions */}
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => navigate(dashboardRoute)}
-              className="flex items-center gap-2 px-3 py-1 bg-gray-100 rounded hover:bg-gray-200 text-sm"
-            >
-              ← Back to Dashboard
-            </button>
-
-            <h1 className="text-2xl font-bold text-blue-700">Inventory</h1>
-          </div>
-
-          <div className="flex items-center gap-2">
-            {/* CREATE available to any dental staff */}
-            {isStaff && (
-              <Link to="/inventory/new" className="bg-blue-600 text-white px-3 py-2 rounded hover:bg-blue-700">
-                + New Item
-              </Link>
-            )}
-            <button onClick={() => dispatch(fetchInventory())} className="bg-gray-100 px-3 py-2 rounded hover:bg-gray-200">
-              Refresh
-            </button>
-          </div>
+      <Navbar />
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Back to Dashboard - Top Left */}
+        <div className="mb-4">
+          <Link
+            to={dashboardRoute}
+            className="text-blue-600 hover:text-blue-800 text-sm inline-flex items-center"
+          >
+            ← Back to Dashboard
+          </Link>
         </div>
+
+        {/* Main Content Card */}
+        <div className="bg-white rounded-lg shadow-md p-6">
+          {/* Header with + New Item button */}
+          <div className="flex items-center justify-between mb-6">
+            <h1 className="text-2xl font-bold text-gray-900">Inventory</h1>
+            <div className="flex items-center gap-2">
+              {isStaff && (
+                <Link to="/inventory/new" className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+                  + New Item
+                </Link>
+              )}
+              <button onClick={() => dispatch(fetchInventory())} className="bg-gray-100 px-4 py-2 rounded hover:bg-gray-200">
+                Refresh
+              </button>
+            </div>
+          </div>
 
         {isLoading && <div className="text-gray-600">Loading...</div>}
         {error && <div className="mb-4 p-3 bg-red-100 text-red-700 rounded">{error}</div>}
@@ -154,6 +157,7 @@ export default function InventoryList() {
         </div>
 
         {items.length === 0 && !isLoading && <div className="mt-4 text-gray-600">No inventory items found.</div>}
+        </div>
       </div>
     </div>
   );

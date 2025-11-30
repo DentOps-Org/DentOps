@@ -144,13 +144,6 @@ export default function AppointmentTypeForm() {
             Cancel
           </button>
         </div>
-        <button
-          type="button"
-          onClick={() => navigate(getDashboardRoute(user))}
-          className="bg-gray-100 text-gray-700 px-3 py-2 rounded hover:bg-gray-200"
-        >
-          Back to Dashboard
-        </button>
       </form>
     </div>
   );

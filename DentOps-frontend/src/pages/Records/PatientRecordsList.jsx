@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
 import axios from '../../api/axios';
+import Navbar from '../../components/Navbar';
 
 export default function PatientRecordsList() {
   const { user } = useSelector(s => s.auth);
@@ -56,8 +57,10 @@ export default function PatientRecordsList() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-6xl mx-auto bg-white rounded-lg shadow-md p-6">
+    <div className="min-h-screen bg-gray-50">
+      <Navbar />
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="bg-white rounded-lg shadow-md p-6">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-2xl font-bold">Patient Records</h2>
@@ -72,9 +75,9 @@ export default function PatientRecordsList() {
             )}
             <Link
               to="/dashboard/dentist"
-              className="px-4 py-2 border rounded hover:bg-gray-50"
+              className="text-blue-600 hover:text-blue-800 text-sm"
             >
-              Back to Dashboard
+              ← Back to Dashboard
             </Link>
           </div>
         </div>
@@ -162,6 +165,7 @@ export default function PatientRecordsList() {
               </div>
             </div>
           ))}
+        </div>
         </div>
       </div>
     </div>
