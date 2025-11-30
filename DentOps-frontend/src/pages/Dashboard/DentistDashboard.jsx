@@ -132,9 +132,10 @@ export default function DentistDashboard() {
 
         {/* quick actions */}
         <div className="mt-6 flex flex-wrap gap-3">
+          <Link to="/appointments/dentist" className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">My Appointments</Link>
           <Link to="/appointment-types" className="bg-gray-100 px-4 py-2 rounded hover:bg-gray-200">View Appointment Types</Link>
           <Link to="/availability/me" className="bg-gray-100 px-4 py-2 rounded hover:bg-gray-200">My Timings</Link>
-          <Link to="/patient-records" className="bg-gray-100 px-4 py-2 rounded hover:bg-gray-200">Patient Records</Link>
+          <Link to="/records" className="bg-gray-100 px-4 py-2 rounded hover:bg-gray-200">Patient Records</Link>
         </div>
 
         {/* Today's appointments header */}

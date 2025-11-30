@@ -1,5 +1,6 @@
 const PatientRecord = require('../models/PatientRecord');
 const Appointment = require('../models/Appointment');
+const User = require('../models/User');
 const { validationResult } = require('express-validator');
 
 // @desc    Get patient records
@@ -15,27 +16,27 @@ exports.getRecords = async (req, res) => {
       query.patientId = req.user.id;
 
     } else if (req.user.role === 'DENTAL_STAFF') {
-      // Dentists → must provide patient email to look up that patient
-      if (!patientEmail) {
-        return res.status(400).json({
-          success: false,
-          message: 'Dentists must provide patientEmail to view records.'
-        });
+      // Dentists can either:
+      // 1. See all records they created (no email provided)
+      // 2. Search for a specific patient by email
+      
+      if (patientEmail) {
+        // Find the patient by email
+        const patient = await User.findOne({ email: patientEmail, role: 'PATIENT' });
+        if (!patient) {
+          return res.status(404).json({
+            success: false,
+            message: 'Patient with this email not found.'
+          });
+        }
+        query.patientId = patient._id;
       }
-
-      // Find the patient by email
-      const patient = await User.findOne({ email: patientEmail, role: 'PATIENT' });
-      if (!patient) {
-        return res.status(404).json({
-          success: false,
-          message: 'Patient with this email not found.'
-        });
-      }
-
-      query.patientId = patient._id;
+      
+      // Always filter by records created by this dentist
+      query.uploadedBy = req.user.id;
 
     } else {
-      // 👨‍💼 For managers/admins (if any) TODO:I think we should remove this
+      // 👨‍💼 For managers/admins (if any)
       if (patientEmail) {
         const patient = await User.findOne({ email: patientEmail, role: 'PATIENT' });
         if (patient) query.patientId = patient._id;

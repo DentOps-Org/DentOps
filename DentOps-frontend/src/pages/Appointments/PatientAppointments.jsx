@@ -36,7 +36,10 @@ export default function PatientAppointments() {
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-md p-6">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-bold">My Appointments</h2>
+          <div className="flex items-center gap-4">
+            <Link to="/dashboard/patient" className="text-blue-600 hover:text-blue-800">← Back to Dashboard</Link>
+            <h2 className="text-xl font-bold">My Appointments</h2>
+          </div>
           <Link to="/appointments/new" className="text-sm text-blue-600">Request new</Link>
         </div>
 

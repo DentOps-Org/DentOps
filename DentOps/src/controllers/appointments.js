@@ -281,6 +281,43 @@ exports.cancelAppointment = async (req, res) => {
   }
 };
 
+// -------------------------
+//   Complete appointment (dentist only)
+//   POST /api/appointments/:id/complete
+// --------------------------
+exports.completeAppointment = async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ success: false, message: 'Invalid id' });
+    }
+
+    const appt = await Appointment.findById(id);
+    if (!appt) {
+      return res.status(404).json({ success: false, message: 'Appointment not found' });
+    }
+
+    // Only the assigned dentist can complete
+    if (!appt.dentalStaffId || String(appt.dentalStaffId) !== String(req.user.id)) {
+      return res.status(403).json({ success: false, message: 'Only assigned dentist can complete this appointment' });
+    }
+
+    // Can only complete CONFIRMED appointments
+    if (appt.status !== 'CONFIRMED') {
+      return res.status(400).json({ success: false, message: 'Only CONFIRMED appointments can be completed' });
+    }
+
+    appt.status = 'COMPLETED';
+    await appt.save();
+
+    return res.status(200).json({ success: true, data: appt });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ success: false, message: 'Server Error' });
+  }
+};
+
 /* -------------------------
   Get single appointment
   GET /api/appointments/:id

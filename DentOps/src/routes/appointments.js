@@ -4,6 +4,7 @@ const {
   createAppointment,
   listRequests, 
   confirmAppointment,
+  completeAppointment,
   getAvailableSlots,
   cancelAppointment,
   getAppointment,
@@ -39,6 +40,9 @@ router.get('/available', protect, getAvailableSlots);
 
 // Cancel appointment (patient/dentist/manager rules handled in controller)
 router.patch('/:id/cancel', protect, cancelAppointment);
+
+// Complete appointment (dentist only)
+router.post('/:id/complete', protect, authorize('DENTAL_STAFF'), completeAppointment);
 
 // Read/update/delete endpoints
 router.get('/:id', protect, getAppointment);

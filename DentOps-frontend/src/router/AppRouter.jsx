@@ -22,6 +22,9 @@ import DentistAvailabilityPage from "../pages/Availability/DentistAvailabilityPa
 import BookAppointment from "../pages/Appointments/BookAppointment";
 import PatientAppointments from "../pages/Appointments/PatientAppointments";
 import ManagerRequests from "../pages/Appointments/ManagerRequests";
+import DentistAppointments from "../pages/Appointments/DentistAppointments";
+import CreatePatientRecord from "../pages/Records/CreatePatientRecord";
+import PatientRecordsList from "../pages/Records/PatientRecordsList";
 
 export default function AppRouter() {
   return (
@@ -189,6 +192,30 @@ export default function AppRouter() {
           element={
             <ProtectedRoute allowedRoles={["PATIENT"]}>
               <PatientAppointments />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/appointments/dentist"
+          element={
+            <ProtectedRoute allowedRoles={[{role: "DENTAL_STAFF", specializations: ["DENTIST"]}]}>
+              <DentistAppointments />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/records"
+          element={
+            <ProtectedRoute>
+              <PatientRecordsList />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/records/new"
+          element={
+            <ProtectedRoute allowedRoles={["DENTAL_STAFF"]}>
+              <CreatePatientRecord />
             </ProtectedRoute>
           }
         />
