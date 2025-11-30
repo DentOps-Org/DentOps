@@ -60,10 +60,23 @@ export default function PatientRecordsList() {
     <div className="min-h-screen bg-gray-50">
       <Navbar />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                {/* Back to Dashboard - Top Left */}
+        <div className="mb-4">
+          <Link
+            to="/dashboard/patient"
+            className="text-blue-600 hover:text-blue-800 text-sm inline-flex items-center"
+          >
+            ← Back to Dashboard
+          </Link>
+        </div>
+
         <div className="bg-white rounded-lg shadow-md p-6">
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold">Patient Records</h2>
+                <div className="flex items-center justify-between mb-6">
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900">My Medical Records</h2>
+            <p className="text-sm text-gray-600 mt-1">View your treatment history and medical records</p>
+          </div>
           <div className="flex gap-3">
             {user?.role === 'DENTAL_STAFF' && (
               <Link
@@ -73,12 +86,7 @@ export default function PatientRecordsList() {
                 + Create Record
               </Link>
             )}
-            <Link
-              to="/dashboard/dentist"
-              className="text-blue-600 hover:text-blue-800 text-sm"
-            >
-              ← Back to Dashboard
-            </Link>
+            
           </div>
         </div>
 

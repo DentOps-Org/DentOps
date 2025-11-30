@@ -75,7 +75,9 @@ export default function AppointmentTypeList() {
                     <th className="py-2">Duration (min)</th>
                     <th className="py-2">Active</th>
                     <th className="py-2">Description</th>
-                    <th className="py-2">Actions</th>
+                    {user?.role === "DENTAL_STAFF" && user?.specialization === "CLINIC_MANAGER" && (
+                      <th className="py-2">Actions</th>
+                    )}
                   </tr>
                 </thead>
                 <tbody>
@@ -83,34 +85,30 @@ export default function AppointmentTypeList() {
                     <tr key={t._id} className="hover:bg-gray-50 border-b">
                       <td className="py-2">{t.name}</td>
                       <td className="py-2">{t.durationMinutes}</td>
-                      <td className="py-2">{t.isActive ? "Yes" : "No"}</td>
+                      <td className="py-2">{ t.isActive ? "Yes" : "No"}</td>
                       <td className="py-2 text-sm text-gray-600">
                         {t.description || "—"}
                       </td>
-                      <td className="py-2">
-                        <div className="flex gap-2">
-                          {user &&
-                            user.role === "DENTAL_STAFF" &&
-                            user.specialization === "CLINIC_MANAGER" && (
-                              <>
-                                <button
-                                  onClick={() =>
-                                    navigate(`/appointment-types/${t._id}/edit`)
-                                  }
-                                  className="text-sm text-indigo-600 hover:underline"
-                                >
-                                  Edit
-                                </button>
-                                <button
-                                  onClick={() => onDelete(t._id)}
-                                  className="text-sm text-red-600 hover:underline"
-                                >
-                                  Delete
-                                </button>
-                              </>
-                            )}
-                        </div>
-                      </td>
+                      {user?.role === "DENTAL_STAFF" && user?.specialization === "CLINIC_MANAGER" && (
+                        <td className="py-2">
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() =>
+                                navigate(`/appointment-types/${t._id}/edit`)
+                              }
+                              className="text-sm text-indigo-600 hover:underline"
+                            >
+                              Edit
+                            </button>
+                            <button
+                              onClick={() => onDelete(t._id)}
+                              className="text-sm text-red-600 hover:underline"
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </td>
+                      )}
                     </tr>
                   ))}
                 </tbody>
