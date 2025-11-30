@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- SEO Meta Tags -->
+  <meta name="description"
+    content="DentOps - Complete dental practice management solution. Manage appointments, patient records, inventory, and staff efficiently.">
+  <meta name="keywords"
+    content="dental management, dentist software, appointment booking, patient records, dental clinic">
+  <meta name="author" content="DentOps">
+  <meta name="robots" content="index, follow">
+
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="DentOps - Dental Practice Management">
+  <meta property="og:description" content="Simplify your dental practice with our all-in-one management solution">
+  <meta property="og:image" content="/images/dentops-og.jpg">
+
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="DentOps - Dental Practice Management">
+  <meta name="twitter:description" content="Simplify your dental practice with our all-in-one management solution">
+
+  <title>
+    <%= title %>
+  </title>
+  <link rel="stylesheet" href="/css/landing.css">
+</head>
+
+<body>
+  <%- include('partials/header') %>
+
+    <main>
+      <section id="hero">
+        <h1>Simplify Your Dental Practice</h1>
+        <p>Manage appointments, staff, and patient records — all in one place.</p>
+        <div class="cta-buttons">
+          <a href="http://localhost:5173/login" class="btn btn-primary">Login</a>
+          <a href="http://localhost:5173/register" class="btn btn-secondary">Register</a>
+        </div>
+      </section>
+
+      <section id="features">
+        <h2>Key Features</h2>
+        <article class="feature">
+          <h3>Easy Appointment Booking</h3>
+          <p>Patients can book appointments online while staff manages schedules efficiently.</p>
+        </article>
+        <article class="feature">
+          <h3>Patient Records</h3>
+          <p>Securely store and access patient records in one centralized location.</p>
+        </article>
+        <article class="feature">
+          <h3>Inventory Management</h3>
+          <p>Track supplies and get low-stock alerts automatically.</p>
+        </article>
+      </section>
+    </main>
+
+    <%- include('partials/footer') %>
+</body>
+
+</html>

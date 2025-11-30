@@ -32,8 +32,13 @@ const inventoryRoutes = require('./routes/inventory');
 const recordRoutes = require('./routes/records');
 const availabilityRoutes = require('./routes/availability');
 const appointmentTypeRoutes = require('./routes/appointmentType');
+const externalApi = require('./services/externalApi');
 
 const app = express();
+
+// Set EJS as view engine
+app.set('view engine', 'ejs');
+app.set('views', path.join(__dirname, 'views'));
 
 // Body parser
 app.use(express.json());
@@ -57,7 +62,10 @@ app.use(
   })
 );
 
-// Serve static files from uploads directory //TODO:is this even required
+// Serve static files from public directory
+app.use(express.static(path.join(__dirname, '../public')));
+
+// Serve static files from uploads directory
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Mount routers
@@ -69,9 +77,41 @@ app.use('/records', recordRoutes); // done
 app.use('/availability', availabilityRoutes);// done
 app.use('/appointment-types', appointmentTypeRoutes); //done
 
-// Default route
+// EJS rendered pages
+app.get('/ejs-landing', (req, res) => {
+  res.render('landing', {
+    title: 'DentOps - Dental Practice Management'
+  });
+});
+
+app.get('/about', (req, res) => {
+  res.render('about', {
+    title: 'About DentOps',
+    features: [
+      'Easy Appointment Booking',
+      'Patient Records Management',
+      'Inventory Tracking',
+      'Staff Availability Management',
+      'Automated Reminders'
+    ]
+  });
+});
+
+// Third-party API endpoint (Health Tips)
+app.get('/api/health-tip', async (req, res) => {
+  try {
+    const result = await externalApi.getDentalTip();
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ success: false, error: 'Failed to fetch tip' });
+  }
+});
+
+// Default route - serves EJS landing page
 app.get('/', (req, res) => {
-  res.send('DentOps API is running...');
+  res.render('landing', {
+    title: 'DentOps - Dental Practice Management'
+  });
 });
 
 const PORT = process.env.PORT || 5000;
