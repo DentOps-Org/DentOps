@@ -63,7 +63,8 @@ export default function PatientRecordsList() {
                 {/* Back to Dashboard - Top Left */}
         <div className="mb-4">
           <Link
-            to="/dashboard/patient"
+            // to="/dashboard/patient"
+            to={user?.role === 'DENTAL_STAFF' ? '/dashboard/dentist' : '/dashboard/patient'}
             className="text-blue-600 hover:text-blue-800 text-sm inline-flex items-center"
           >
             ← Back to Dashboard

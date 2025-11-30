@@ -2,7 +2,8 @@
 import { useEffect, useState } from "react";
 import axios from "../../api/axios";
 import { useSelector } from "react-redux";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import Navbar from "../../components/Navbar";
 
 const WEEKDAY_NAMES = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
@@ -44,19 +45,25 @@ export default function DentistAvailabilityPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="max-w-3xl mx-auto mt-8 p-6 bg-white rounded-lg shadow-md">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h1 className="text-2xl font-bold text-blue-700">My Working Slots</h1>
-            <p className="text-sm text-gray-600">Your recurring weekly schedule (read-only).</p>
-          </div>
-          <button
-            onClick={() => navigate("/dashboard/dentist")}
-            className="inline-flex items-center gap-2 px-3 py-2 border rounded hover:bg-gray-50"
+      <Navbar />
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Back to Dashboard - Top Left */}
+        <div className="mb-4">
+          <Link
+            to="/dashboard/dentist"
+            className="text-blue-600 hover:text-blue-800 text-sm inline-flex items-center"
           >
             ← Back to Dashboard
-          </button>
+          </Link>
         </div>
+
+        {/* Main Content Card */}
+        <div className="bg-white rounded-lg shadow-md p-6">
+          {/* Header */}
+          <div className="mb-6">
+            <h2 className="text-2xl font-bold text-gray-900">My Working Slots</h2>
+            <p className="text-sm text-gray-600 mt-1">Your recurring weekly schedule (read-only)</p>
+          </div>
 
         {loading && <div className="text-gray-600">Loading...</div>}
         {err && <div className="mb-4 p-3 bg-red-100 text-red-700 rounded">{err}</div>}
@@ -75,6 +82,7 @@ export default function DentistAvailabilityPage() {
               </div>
             </div>
           ))}
+        </div>
         </div>
       </div>
     </div>
