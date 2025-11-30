@@ -1,7 +1,10 @@
-require("dotenv").config({ path: __dirname + "/../.env", debug: true });//TODO:why this line ,check this one out
+const dotenv = require('dotenv');
 
-// Set timezone to IST , is this even needed ??? TODO: find this onw out
-process.env.TZ = 'Asia/Kolkata';
+// Load environment variables FIRST (before anything else)
+// In production, Render will set env vars directly, so we skip loading .env file
+if (process.env.NODE_ENV !== 'production') {
+  dotenv.config({ path: __dirname + '/../.env' });
+}
 
 const express = require('express');
 const cors = require('cors');
@@ -9,19 +12,8 @@ const morgan = require('morgan');
 const helmet = require('helmet');
 const path = require('path');
 const connectDB = require('./config/db');
-//TODO: remove this as it is just for checking i think fs is used till line 23
-const fs = require("fs");
-console.log("Does .env exist?", fs.existsSync(__dirname + "/../.env"));
-console.log("Raw env file contents:");
-console.log(fs.readFileSync(__dirname + "/../.env", "utf-8"))
 
-console.log('Environment variables loaded:', {
-  NODE_ENV: process.env.NODE_ENV,
-  MONGO_URI: process.env.MONGO_URI ? '***URI exists***' : 'undefined',
-  PORT: process.env.PORT
-});
-
-// Connect to database
+// Connect to database (env vars are now loaded)
 connectDB();
 
 // Route files
@@ -43,7 +35,7 @@ app.set('views', path.join(__dirname, 'views'));
 // Body parser
 app.use(express.json());
 
-// Dev logging middleware TODO: remove this ig
+// Dev logging middleware
 if (process.env.NODE_ENV === 'development') {
   app.use(morgan('dev'));
 }
