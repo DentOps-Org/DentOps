@@ -47,7 +47,10 @@ app.use(helmet());
 // app.use(cors());
 app.use(
   cors({
-    origin: "http://localhost:5173", // your frontend URL
+    origin: [
+      "http://localhost:5173",           // Local development
+      "https://dentops.vercel.app"   // ← Add your Vercel URL here!
+    ],
     credentials: true, // allow cookies/JWT to be sent
     methods: ["GET", "POST", "PUT", "DELETE"],
     allowedHeaders: ["Content-Type", "Authorization"],
