@@ -21,7 +21,8 @@ export default function LandingPage() {
   useEffect(() => {
     const fetchHealthTip = async () => {
       try {
-        const response = await axios.get('http://localhost:5000/api/health-tip');
+        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+        const response = await axios.get(`${apiUrl}/api/health-tip`);
         if (response.data.success) {
           setHealthTip(response.data.data);
         }
