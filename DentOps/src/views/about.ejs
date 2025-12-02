@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- SEO Meta Tags -->
+    <meta name="description"
+        content="Learn about DentOps - Modern dental practice management software trusted by clinics worldwide.">
+    <meta name="keywords" content="about dentops, dental software, practice management, dental technology">
+    <meta name="robots" content="index, follow">
+
+    <title>
+        <%= title %>
+    </title>
+    <link rel="stylesheet" href="/css/landing.css">
+</head>
+
+<body>
+    <%- include('partials/header') %>
+
+        <main>
+            <section id="about-hero">
+                <h1>About DentOps</h1>
+                <p>Your complete dental practice management solution</p>
+            </section>
+
+            <section id="mission">
+                <h2>Our Mission</h2>
+                <p>We aim to simplify dental practice operations through innovative technology,
+                    allowing dentists to focus on what matters most - patient care.</p>
+            </section>
+
+            <section id="features-list">
+                <h2>What We Offer</h2>
+                <ul>
+                    <% features.forEach(function(feature) { %>
+                        <li>
+                            <%= feature %>
+                        </li>
+                        <% }); %>
+                </ul>
+            </section>
+        </main>
+
+        <%- include('partials/footer') %>
+</body>
+
+</html>
