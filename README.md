@@ -319,7 +319,6 @@ Authorization: Bearer <your_jwt_token>
 
 | Method | Endpoint | Description | Auth Required | Role |
 |--------|----------|-------------|---------------|------|
-| GET | `/users/me` | Get current user profile | ✅ | Any |
 | GET | `/users` | Get users (filter by email/role) | ✅ | CLINIC_MANAGER |
 | GET | `/users/providers` | Get all dental staff/providers | ✅ | Any |
 
