@@ -155,7 +155,7 @@ Created `src/utils/validators.js` with reusable validation functions:
 
 **Implementation:**
 Mongoose schemas enforce data integrity at the database layer:
-- Custom validators for phone numbers (exactly 11 digits)
+- Custom validators for phone numbers (exactly 10 digits)
 - Email format validation with regex
 - Password encryption via pre-save hooks
 - Role-specific field requirements
