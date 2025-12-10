@@ -22,8 +22,15 @@ describe('Authentication API - Integration Tests', () => {
   // Before all tests: Connect to test database
   beforeAll(async () => {
     // Use test database (you can also use mongodb-memory-server)
-    const testDbUri = process.env.MONGO_TEST_URI || 'mongodb://localhost:27017/dentops-test';
-    await mongoose.connect(testDbUri);
+    const testDbUri = process.env.MONGO_URI; // Use same DB as development
+    
+    try {
+      await mongoose.connect(testDbUri);
+      console. log('✅ Connected to MongoDB for integration tests');
+    } catch (error) {
+      console.error('❌ Failed to connect to MongoDB for integration tests');
+      throw error; // Fail tests if MongoDB unavailable
+    }
   });
 
   // After each test: Clean up database
@@ -47,6 +54,7 @@ describe('Authentication API - Integration Tests', () => {
         fullName: 'John Doe',
         email: 'john@example.com',
         password: 'Password123',
+        phone: '1234567890', // Updated to 10 digits
         role: 'PATIENT'
       });
 
@@ -64,7 +72,7 @@ describe('Authentication API - Integration Tests', () => {
     expect(user).toBeDefined();
     expect(user.fullName).toBe('John Doe');
     expect(user.role).toBe('PATIENT');
-  });
+  }, 15000); // 15 second timeout for email sending
 
   /**
    * TEST 2: User Login
@@ -78,6 +86,7 @@ describe('Authentication API - Integration Tests', () => {
         fullName: 'Jane Smith',
         email: 'jane@example.com',
         password: 'Password123',
+        phone: '2345678901', // Updated to 10 digits
         role: 'PATIENT'
       });
 
@@ -93,7 +102,7 @@ describe('Authentication API - Integration Tests', () => {
     expect(response.body.success).toBe(true);
     expect(response.body.token).toBeDefined();
     expect(response.body.user.email).toBe('jane@example.com');
-  });
+  }, 15000); // 15 second timeout for email sending
 
   /**
    * TEST 3: Login with Wrong Password (Negative Test)
@@ -107,6 +116,7 @@ describe('Authentication API - Integration Tests', () => {
         fullName: 'Test User',
         email: 'test@example.com',
         password: 'CorrectPassword123',
+        phone: '3456789012', // Updated to 10 digits
         role: 'PATIENT'
       });
 
@@ -120,7 +130,7 @@ describe('Authentication API - Integration Tests', () => {
 
     expect(response.status).toBe(401); // Unauthorized
     expect(response.body.success).toBe(false);
-  });
+  }, 15000); // 15 second timeout for email sending
 
   /**
    * TEST 4: Access Protected Route
@@ -134,7 +144,9 @@ describe('Authentication API - Integration Tests', () => {
         fullName: 'Protected User',
         email: 'protected@example.com',
         password: 'Password123',
-        role: 'DENTIST'
+        phone: '4567890123', // Updated to 10 digits
+        role: 'DENTAL_STAFF',
+        specialization: 'DENTIST'
       });
 
     const token = registerResponse.body.token;
@@ -145,9 +157,10 @@ describe('Authentication API - Integration Tests', () => {
       .set('Authorization', `Bearer ${token}`); // Add token to header
 
     expect(response.status).toBe(200);
-    expect(response.body.email).toBe('protected@example.com');
-    expect(response.body.role).toBe('DENTIST');
-  });
+    expect(response.body.data.email).toBe('protected@example.com');
+    expect(response.body.data.role).toBe('DENTAL_STAFF');
+    expect(response.body.data.specialization).toBe('DENTIST');
+  }, 15000); // 15 second timeout for email sending
 
   /**
    * TEST 5: Protected Route Without Token (Negative Test)

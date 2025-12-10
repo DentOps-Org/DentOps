@@ -35,10 +35,10 @@ const UserSchema = new mongoose.Schema({
     unique: true,
     validate: {
       validator: function(v) {
-        // Must be exactly 11 digits (no more, no less)
-        return /^\d{11}$/.test(v);
+        // Must be exactly 10 digits (no more, no less)
+        return /^\d{10}$/.test(v);
       },
-      message: 'Phone number must be exactly 11 digits'
+      message: 'Phone number must be exactly 10 digits'
     }
   },
   dob: { type: Date },

@@ -52,7 +52,7 @@ function validateEmail(email) {
 /**
  * Validates phone number format
  * Rules:
- * - Exactly 11 digits
+ * - Exactly 10 digits
  * - Strips non-numeric characters automatically
  * - Returns sanitized phone number if valid
  */
@@ -64,11 +64,11 @@ function validatePhone(phone) {
   // Strip all non-numeric characters
   const sanitized = phone.toString().replace(/\D/g, '');
   
-  // Check if exactly 11 digits
-  if (sanitized.length !== 11) {
+  // Check if exactly 10 digits
+  if (sanitized.length !== 10) {
     return { 
       valid: false, 
-      message: 'Phone number must be exactly 11 digits' 
+      message: 'Phone number must be exactly 10 digits' 
     };
   }
   
