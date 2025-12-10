@@ -31,7 +31,15 @@ const UserSchema = new mongoose.Schema({
   },
   phone: {
     type: String,
-    maxlength: [11, 'Phone number cannot be longer than 11 characters']
+    required: [true, 'Phone number is required'],
+    unique: true,
+    validate: {
+      validator: function(v) {
+        // Must be exactly 11 digits (no more, no less)
+        return /^\d{11}$/.test(v);
+      },
+      message: 'Phone number must be exactly 11 digits'
+    }
   },
   dob: { type: Date },
   password: {

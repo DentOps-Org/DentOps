@@ -49,7 +49,39 @@ function validateEmail(email) {
   return { valid: true, message: 'Email is valid' };
 }
 
+/**
+ * Validates phone number format
+ * Rules:
+ * - Exactly 11 digits
+ * - Strips non-numeric characters automatically
+ * - Returns sanitized phone number if valid
+ */
+function validatePhone(phone) {
+  if (!phone) {
+    return { valid: false, message: 'Phone number is required' };
+  }
+  
+  // Strip all non-numeric characters
+  const sanitized = phone.toString().replace(/\D/g, '');
+  
+  // Check if exactly 11 digits
+  if (sanitized.length !== 11) {
+    return { 
+      valid: false, 
+      message: 'Phone number must be exactly 11 digits' 
+    };
+  }
+  
+  // All checks passed - return sanitized phone
+  return { 
+    valid: true, 
+    message: 'Phone number is valid',
+    sanitizedPhone: sanitized
+  };
+}
+
 module.exports = {
   validatePassword,
-  validateEmail
+  validateEmail,
+  validatePhone
 };

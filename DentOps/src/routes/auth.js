@@ -11,7 +11,9 @@ router.post(
   [ //TODO:where this checks are going
     check('fullName', 'Name is required').not().isEmpty(),
     check('email', 'Please include a valid email').isEmail(),
-    check('password', 'Please enter a password with 6 or more characters').isLength({ min: 6 })
+    check('password', 'Please enter a password with 6 or more characters').isLength({ min: 6 }),
+    check('phone', 'Phone number is required').not().isEmpty()
+    // Phone format validation happens in controller after sanitization
   ],
   register
 );

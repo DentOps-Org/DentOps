@@ -1,5 +1,6 @@
 const User = require("../models/User");
 const { validationResult } = require("express-validator");
+const { validatePhone } = require("../utils/validators");
 
 //TODO: change the APis ig
 // @desc    Register user
@@ -25,12 +26,30 @@ exports.register = async (req, res) => {
       specialization,
     } = req.body;
 
-    // Check if user already exists
-    const userExists = await User.findOne({ email });
+    // Validate and sanitize phone number
+    const phoneValidation = validatePhone(phone);
+    if (!phoneValidation.valid) {
+      return res.status(400).json({ 
+        success: false, 
+        message: phoneValidation.message 
+      });
+    }
+    const sanitizedPhone = phoneValidation.sanitizedPhone;
+
+    // Check if user already exists (email or phone)
+    const userExists = await User.findOne({ 
+      $or: [{ email }, { phone: sanitizedPhone }] 
+    });
     if (userExists) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Email already registered" });
+      if (userExists.email === email) {
+        return res
+          .status(400)
+          .json({ success: false, message: "Email already registered" });
+      } else {
+        return res
+          .status(400)
+          .json({ success: false, message: "Phone number already registered" });
+      }
     }
 
     // Create user
@@ -39,7 +58,7 @@ exports.register = async (req, res) => {
       email,
       password,
       role: role || "PATIENT",
-      phone,
+      phone: sanitizedPhone, // Use sanitized 11-digit phone
       age: age ? parseInt(age) : undefined, //TODO:remove this undefined
       gender,
       specialization:
