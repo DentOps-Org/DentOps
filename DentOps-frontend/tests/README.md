@@ -2,6 +2,8 @@
 
 Test files for the DentOps frontend app.
 
+📋 **See [TEST_SUMMARY.md](./TEST_SUMMARY.md) for detailed test coverage and functionality analysis.**
+
 ## Test Structure
 
 ```
