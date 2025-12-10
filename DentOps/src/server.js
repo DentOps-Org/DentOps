@@ -24,7 +24,9 @@ const inventoryRoutes = require('./routes/inventory');
 const recordRoutes = require('./routes/records');
 const availabilityRoutes = require('./routes/availability');
 const appointmentTypeRoutes = require('./routes/appointmentType');
+const aiRoutes = require('./routes/ai');
 const externalApi = require('./services/externalApi');
+
 
 const app = express();
 
@@ -71,6 +73,8 @@ app.use('/inventory', inventoryRoutes); // done
 app.use('/records', recordRoutes); // done
 app.use('/availability', availabilityRoutes);// done
 app.use('/appointment-types', appointmentTypeRoutes); //done
+app.use('/api/ai', aiRoutes); // AI features
+
 
 // EJS rendered pages
 app.get('/ejs-landing', (req, res) => {
