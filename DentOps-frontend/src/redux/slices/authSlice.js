@@ -51,6 +51,10 @@ const authSlice = createSlice({
 });
 
 export const { setLoading, setError, setAuth, clearAuth } = authSlice.actions;
+
+// Alias for resetAuthError (used by components)
+export const resetAuthError = () => setError(null);
+
 export default authSlice.reducer;
 
 // -------------------------
@@ -191,3 +195,7 @@ export const logoutUser = (navigate) => async (dispatch) => {
     }
   }
 };
+
+// Aliases for login and register (used by components)
+export const login = loginUser;
+export const register = registerUser;
