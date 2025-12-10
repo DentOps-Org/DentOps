@@ -18,6 +18,11 @@ export default function CreatePatientRecord() {
     description: ''
   });
 
+  // AI Enhancement States
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiSuggestion, setAiSuggestion] = useState(null);
+  const [showSuggestion, setShowSuggestion] = useState(false);
+
   const [loading, setLoading] = useState(false);
   const [patientVerified, setPatientVerified] = useState(false);
   const [patientInfo, setPatientInfo] = useState(null);
@@ -88,6 +93,56 @@ export default function CreatePatientRecord() {
       setPatientVerified(false);
       setPatientInfo(null);
     }
+
+    // Hide suggestion if description changes
+    if (e.target.name === 'description') {
+      setShowSuggestion(false);
+    }
+  };
+
+  // AI Enhancement: Call API to expand notes
+  const handleEnhanceWithAI = async () => {
+    if (!formData.description || formData.description.trim().length === 0) {
+      alert('Please enter some brief notes first');
+      return;
+    }
+
+    setAiLoading(true);
+    setShowSuggestion(false);
+    
+    try {
+      const response = await axios.post('/api/ai/expand-notes', {
+        notes: formData.description
+      });
+
+      if (response.data.success) {
+        setAiSuggestion(response.data.data.expandedNotes);
+        setShowSuggestion(true);
+      } else {
+        alert('Failed to generate enhanced notes');
+      }
+    } catch (error) {
+      console.error('AI Enhancement Error:', error);
+      alert(error.response?.data?.message || 'Failed to enhance notes with AI. Please try again.');
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
+  // Accept AI suggestion
+  const handleAcceptSuggestion = () => {
+    setFormData({
+      ...formData,
+      description: aiSuggestion
+    });
+    setShowSuggestion(false);
+    setAiSuggestion(null);
+  };
+
+  // Discard AI suggestion
+  const handleDiscardSuggestion = () => {
+    setShowSuggestion(false);
+    setAiSuggestion(null);
   };
 
   return (
@@ -167,7 +222,7 @@ export default function CreatePatientRecord() {
             />
           </div>
 
-          {/* Description */}
+          {/* Description with AI Enhancement */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Description / Notes
@@ -177,9 +232,73 @@ export default function CreatePatientRecord() {
               value={formData.description}
               onChange={handleChange}
               rows={6}
-              placeholder="Enter detailed notes, observations, treatment details, etc."
-              className="w-full border rounded px-3 py-2"
+              placeholder="Enter brief treatment notes (e.g., 'cavity tooth 14, composite filling')"
+              className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
+            
+            {/* AI Enhance Button */}
+            <div className="mt-2">
+              <button
+                type="button"
+                onClick={handleEnhanceWithAI}
+                disabled={aiLoading || !formData.description.trim()}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-md hover:from-purple-700 hover:to-blue-700 disabled:from-gray-400 disabled:to-gray-400 disabled:cursor-not-allowed transition-all duration-200 shadow-sm hover:shadow-md"
+              >
+                <span className="text-lg">✨</span>
+                {aiLoading ? 'Generating...' : 'Enhance with AI'}
+              </button>
+              {aiLoading && (
+                <span className="ml-3 text-sm text-gray-600 animate-pulse">
+                  AI is generating professional notes...
+                </span>
+              )}
+            </div>
+
+            {/* AI Suggestion Preview */}
+            {showSuggestion && aiSuggestion && (
+              <div className="mt-4 p-4 bg-gradient-to-r from-blue-50 to-purple-50 border-2 border-blue-300 rounded-lg shadow-sm animate-fadeIn">
+                <div className="flex items-start justify-between mb-2">
+                  <h4 className="font-semibold text-blue-900 flex items-center gap-2">
+                    <span className="text-xl">🤖</span>
+                    AI-Generated Professional Notes
+                  </h4>
+                  <span className="text-xs text-gray-600 italic">✏️ Editable</span>
+                </div>
+                
+                <textarea
+                  value={aiSuggestion}
+                  onChange={(e) => setAiSuggestion(e.target.value)}
+                  rows={8}
+                  className="w-full bg-white p-3 rounded border-2 border-blue-300 mb-3 text-gray-800 focus:outline-none focus:border-blue-500 font-sans resize-y"
+                  placeholder="AI-generated notes will appear here..."
+                />
+
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={handleAcceptSuggestion}
+                    className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors flex items-center gap-2"
+                  >
+                    ✓ Accept
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleDiscardSuggestion}
+                    className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600 transition-colors"
+                  >
+                    ✗ Discard
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleEnhanceWithAI}
+                    disabled={aiLoading}
+                    className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-gray-400 transition-colors flex items-center gap-1"
+                  >
+                    <span>🔄</span> Regenerate
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Submit Button */}
