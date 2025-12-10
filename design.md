@@ -175,9 +175,9 @@ phone: {
   unique: true,
   validate: {
     validator: function(v) {
-      return /^\d{11}$/.test(v);
+      return /^\d{10}$/.test(v);
     },
-    message: 'Phone number must be exactly 11 digits'
+    message: 'Phone number must be exactly 10 digits'
   }
 }
 ```
