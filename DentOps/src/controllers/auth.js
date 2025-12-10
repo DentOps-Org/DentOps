@@ -1,6 +1,7 @@
 const User = require("../models/User");
 const { validationResult } = require("express-validator");
 const { validatePhone } = require("../utils/validators");
+const emailService = require("../services/emailService");
 
 //TODO: change the APis ig
 // @desc    Register user
@@ -64,6 +65,14 @@ exports.register = async (req, res) => {
       specialization:
         role === "DENTAL_STAFF" ? specialization || "MANAGER" : null,
     });
+
+    // Send welcome email (don't block registration if email fails)
+    try {
+      await emailService.sendWelcomeEmail(user);
+    } catch (emailError) {
+      console.error('Failed to send welcome email:', emailError);
+      // Continue with registration even if email fails
+    }
 
     sendTokenResponse(user, 201, res);
   } catch (error) {
