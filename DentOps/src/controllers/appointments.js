@@ -5,6 +5,7 @@ const Appointment = require('../models/Appointment');
 const User = require('../models/User');
 const AppointmentType = require('../models/AppointmentType');
 const Availability = require('../models/Availability'); // optional: used by getAvailableSlots wrapper
+const emailService = require('../services/emailService');
 
 /* Helpers */
 function addMinutes(date, mins) { return new Date(date.getTime() + mins * 60000); }
@@ -176,6 +177,25 @@ exports.confirmAppointment = async (req, res) => {
     appt.availabilityId = block._id;
 
     await appt.save();
+
+    // Send confirmation emails to both patient and dentist (don't block on email failures)
+    try {
+      // Fetch full patient and dentist details for email
+      const patientUser = await User.findById(appt.patientId);
+      const dentistUser = await User.findById(dentalStaffId);
+      
+      if (patientUser && dentistUser) {
+        // Send emails in parallel
+        await Promise.allSettled([
+          emailService.sendAppointmentConfirmationToPatient(appt, patientUser, dentistUser, at),
+          emailService.sendAppointmentConfirmationToDentist(appt, patientUser, dentistUser, at)
+        ]);
+      }
+    } catch (emailError) {
+      console.error('Failed to send appointment confirmation emails:', emailError);
+      // Continue with appointment confirmation even if email fails
+    }
+
     return res.status(200).json({ success:true, data: appt });
   } catch (err) {
     console.error(err);
