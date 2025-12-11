@@ -1,13 +1,20 @@
 const nodemailer = require('nodemailer');
+const { Resend } = require('resend');
 const welcomeEmailTemplate = require('../templates/email/welcomeEmail');
 const appointmentConfirmationTemplate = require('../templates/email/appointmentConfirmation');
 
 /**
- * Email Service using Nodemailer
- * Handles all email notifications for DentOps
+ * Email Service - Supports both Nodemailer (local) and Resend (production)
+ * Automatically uses Resend if RESEND_API_KEY is set, otherwise falls back to Gmail/SMTP
  */
 
-// Create reusable transporter
+// Initialize Resend client (only if API key exists)
+let resendClient = null;
+if (process.env.RESEND_API_KEY) {
+  resendClient = new Resend(process.env.RESEND_API_KEY);
+}
+
+// Nodemailer transporter (fallback for local development)
 let transporter = null;
 
 const getTransporter = () => {
@@ -15,12 +22,12 @@ const getTransporter = () => {
     transporter = nodemailer.createTransport({
       host: process.env.EMAIL_HOST,
       port: parseInt(process.env.EMAIL_PORT || '587'),
-      secure: process.env.EMAIL_PORT === '465', // true for 465, false for other ports
+      secure: process.env.EMAIL_PORT === '465',
       auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASSWORD,
       },
-      connectionTimeout: 5000, // 5 seconds
+      connectionTimeout: 5000,
       greetingTimeout: 5000,
       socketTimeout: 5000
     });
@@ -30,20 +37,37 @@ const getTransporter = () => {
 
 /**
  * Base function to send emails
- * @param {Object} options - Email options
- * @param {string} options.to - Recipient email
- * @param {string} options.subject - Email subject
- * @param {string} options.html - HTML content
- * @param {string} options.text - Plain text content (optional)
+ * Uses Resend if API key is available, otherwise uses Nodemailer
  */
 const sendEmail = async (options) => {
   try {
-    // Check if email is configured
+    // Option 1: Use Resend (recommended for production)
+    if (resendClient) {
+      console.log('📧 Sending email via Resend...');
+      
+      const result = await resendClient.emails.send({
+        from: process.env.EMAIL_FROM || 'DentOps <onboarding@resend.dev>',
+        to: options.to,
+        subject: options.subject,
+        html: options.html,
+      });
+
+      console.log('✅ Email sent successfully via Resend:', {
+        id: result.data?.id,
+        to: options.to,
+        subject: options.subject,
+      });
+
+      return { success: true, messageId: result.data?.id };
+    }
+
+    // Option 2: Use Nodemailer (fallback for local development)
     if (!process.env.EMAIL_USER || !process.env.EMAIL_PASSWORD) {
       console.warn('⚠️  Email service not configured. Skipping email send.');
       return { success: false, message: 'Email service not configured' };
     }
 
+    console.log('📧 Sending email via Nodemailer (SMTP)...');
     const transport = getTransporter();
 
     const mailOptions = {
@@ -56,25 +80,28 @@ const sendEmail = async (options) => {
 
     const info = await transport.sendMail(mailOptions);
     
-    console.log('✅ Email sent successfully:', {
+    console.log('✅ Email sent successfully via Nodemailer:', {
       messageId: info.messageId,
       to: options.to,
       subject: options.subject,
     });
 
     return { success: true, messageId: info.messageId };
+
   } catch (error) {
     console.error('❌ Email send failed:', error.message);
+    
+    // Provide helpful error messages
+    if (error.message?.includes('timeout')) {
+      console.error('💡 Tip: Connection timeout - if on Render, use RESEND_API_KEY instead of SMTP');
+    }
+    
     return { success: false, error: error.message };
   }
 };
 
 /**
  * Send welcome email to new users
- * @param {Object} user - User object
- * @param {string} user.email - User email
- * @param {string} user.fullName - User full name
- * @param {string} user.role - User role (PATIENT, DENTAL_STAFF)
  */
 const sendWelcomeEmail = async (user) => {
   try {
@@ -98,10 +125,6 @@ const sendWelcomeEmail = async (user) => {
 
 /**
  * Send appointment confirmation email to patient
- * @param {Object} appointment - Appointment object
- * @param {Object} patient - Patient user object
- * @param {Object} dentist - Dentist user object
- * @param {Object} appointmentType - Appointment type object
  */
 const sendAppointmentConfirmationToPatient = async (appointment, patient, dentist, appointmentType) => {
   try {
@@ -138,10 +161,6 @@ const sendAppointmentConfirmationToPatient = async (appointment, patient, dentis
 
 /**
  * Send appointment confirmation email to dentist
- * @param {Object} appointment - Appointment object
- * @param {Object} patient - Patient user object
- * @param {Object} dentist - Dentist user object
- * @param {Object} appointmentType - Appointment type object
  */
 const sendAppointmentConfirmationToDentist = async (appointment, patient, dentist, appointmentType) => {
   try {
